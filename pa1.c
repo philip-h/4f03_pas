@@ -3,25 +3,29 @@
                 Theo Stone
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
+#include <string>
+
 #include <pthread.h>
+
+using namespace std;
 
 /* Prototypes */
 void *createString(void *);
-int checkArgs(int, int, int, int, char* [], int);
+int checkArgs(int);
 
 /* Global vars */
 char* S;
 int f, n, l, m;
-char* c [];
+char* c;
 
 int main(int argc, char* argv[]) {
   /**
     Process command line arguments
   */
   if (argc < 8) {
-    printf("Yo dawg, you didn't do the command line thing right... try again\n");
+    cout << "Yo dawg, you didn't do the command line thing right... try again" << endl;
     return -1;
   }
 
@@ -33,33 +37,39 @@ int main(int argc, char* argv[]) {
 
   l = atoi(argv[3]);
   m = atoi(argv[4]);
-  // loop from 5 to end of arcg
+
+  c = (char*) malloc(sizeof(char)*n);
+
   for (short i = 0; i < argc-5; i++) {
-    c[i] = argv[i+5];
+    c[i] = *argv[i+5];
   }
   int len = argc - 5;
-  for (size_t i = 0; i < len; i++) {
-    printf("%s\n", c[i]);
-  }
 
   if (checkArgs(argc) != 0) {
     return -1;
   }
 
+  // The length of S will always be m * l
+  S = (char*) malloc(sizeof(char)*(m*l));
+
   /**
     Set up Posix Threads
   */
-  pthread_t* threads = malloc(n*sizeof(pthread_t));
+  pthread_t* threads = (pthread_t*) malloc(n*sizeof(pthread_t));
 
-  for (short i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     pthread_create(&threads[i], NULL, createString, (void *)i);
   }
 
-  for (short i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     pthread_join(threads[i], NULL);
   }
 
+  cout << S << endl;
+
   free(threads);
+  free(c);
+
   return 0;
 }
 
@@ -91,10 +101,13 @@ int checkArgs(int argc){
 
   return 0;
 
-
 }
 
 void *createString(void *r) {
-  short rank = (short) r;
+  long rank = (long) r;
+  int lenS = sizeof(S) / sizeof(S[0]);
+  if (lenS < m * l) {
+    S[lenS+1] = c[rank];
+  }
 
 }
