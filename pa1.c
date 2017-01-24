@@ -7,8 +7,9 @@
 #include <cstdlib>
 #include <string>
 #include <string.h>
-
+#include <time.h>
 #include <pthread.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -20,6 +21,8 @@ int checkArgs(int);
 string S = "";
 int f, n, l, m;
 char* c;
+
+int MILIS = 1000000;
 
 int main(int argc, char* argv[]) {
   /**
@@ -102,6 +105,21 @@ int checkArgs(int argc){
 void *createString(void *r) {
   long rank = (long) r;
   printf("Thread %d running...\n", rank);
+  srand(time(NULL));
+
+  int n = rand() % 500 + 100;
+  printf("%d\n", n);
+
+  struct timespec tim, tim2;
+  tim.tv_sec  = 0;
+  tim.tv_nsec = 500;
+
+  if(nanosleep(&tim , &tim2) < 0 )
+  {
+   printf("Nano sleep system call failed! \n");
+  }
+
+  printf("Thread # %d slept for: %d\n", rank, (1 + rand() % 5) * 100 * MILIS);
   int lenS = S.length();
 
   S += c[rank];
