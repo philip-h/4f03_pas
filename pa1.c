@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <string.h>
 
 #include <pthread.h>
 
@@ -16,7 +17,7 @@ void *createString(void *);
 int checkArgs(int);
 
 /* Global vars */
-char* S;
+string S = "";
 int f, n, l, m;
 char* c;
 
@@ -25,12 +26,11 @@ int main(int argc, char* argv[]) {
     Process command line arguments
   */
   if (argc < 8) {
-    cout << "Yo dawg, you didn't do the command line thing right... try again" << endl;
+    printf("Yo dawg, you didn't do the command line thing right... try again\n");
     return -1;
   }
 
   /* Type checking the first 4 arguments*/
-  //TODO: Actually check them
 
   f = atoi(argv[1]);
   n = atoi(argv[2]);
@@ -49,9 +49,6 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  // The length of S will always be m * l
-  S = (char*) malloc(sizeof(char)*(m*l));
-
   /**
     Set up Posix Threads
   */
@@ -65,8 +62,7 @@ int main(int argc, char* argv[]) {
     pthread_join(threads[i], NULL);
   }
 
-  cout << S << endl;
-
+  printf("%s\n", S.c_str());
   free(threads);
   free(c);
 
@@ -105,9 +101,9 @@ int checkArgs(int argc){
 
 void *createString(void *r) {
   long rank = (long) r;
-  int lenS = sizeof(S) / sizeof(S[0]);
-  if (lenS < m * l) {
-    S[lenS+1] = c[rank];
-  }
+  printf("Thread %d running...\n", rank);
+  int lenS = S.length();
+
+  S += c[rank];
 
 }
