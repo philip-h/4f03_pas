@@ -4,12 +4,14 @@
 */
 
 #include <iostream>
-#include <cstdlib>
 #include <string>
+
+#include <cstdlib>
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+
 
 using namespace std;
 
@@ -55,6 +57,7 @@ int main(int argc, char* argv[]) {
   /**
     Set up Posix Threads
   */
+  srand(time(NULL));
   pthread_t* threads = (pthread_t*) malloc(n*sizeof(pthread_t));
 
   for (size_t i = 0; i < n; i++) {
@@ -105,21 +108,20 @@ int checkArgs(int argc){
 void *createString(void *r) {
   long rank = (long) r;
   printf("Thread %d running...\n", rank);
-  srand(time(NULL));
 
-  int n = rand() % 500 + 100;
-  printf("%d\n", n);
+
+  int randSleep = rand() % 400 + 100;
+  long randSleepNano = randSleep * MILIS;
 
   struct timespec tim, tim2;
   tim.tv_sec  = 0;
-  tim.tv_nsec = 500;
+  tim.tv_nsec = randSleepNano;
 
   if(nanosleep(&tim , &tim2) < 0 )
   {
    printf("Nano sleep system call failed! \n");
   }
-
-  printf("Thread # %d slept for: %d\n", rank, (1 + rand() % 5) * 100 * MILIS);
+  // Acquire S
   int lenS = S.length();
 
   S += c[rank];
