@@ -23,6 +23,7 @@ int checkArgs(int);
 string S = "";
 int f, n, l, m;
 char* c;
+pthread_mutex_t mutex;
 
 int MILIS = 1000000;
 
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) {
   for (short i = 0; i < argc-5; i++) {
     c[i] = *argv[i+5];
   }
+
   int len = argc - 5;
 
   if (checkArgs(argc) != 0) {
@@ -59,6 +61,7 @@ int main(int argc, char* argv[]) {
   */
   srand(time(NULL));
   pthread_t* threads = (pthread_t*) malloc(n*sizeof(pthread_t));
+
 
   for (size_t i = 0; i < n; i++) {
     pthread_create(&threads[i], NULL, createString, (void *)i);
@@ -107,23 +110,49 @@ int checkArgs(int argc){
 
 void *createString(void *r) {
   long rank = (long) r;
-  printf("Thread %d running...\n", rank);
 
-
-  int randSleep = rand() % 400 + 100;
-  long randSleepNano = randSleep * MILIS;
-
+  int randSleep, randSleepNano;
   struct timespec tim, tim2;
   tim.tv_sec  = 0;
-  tim.tv_nsec = randSleepNano;
 
-  if(nanosleep(&tim , &tim2) < 0 )
-  {
-   printf("Nano sleep system call failed! \n");
+  for(int i = 0; i < 1000; i++){
+    randSleep = rand() % 400 + 100;
+    andSleepNano = randSleep * MILIS;
+
+    tim.tv_nsec = randSleepNano;
+
+    if(nanosleep(&tim , &tim2) < 0 )
+    {
+     printf("Nano sleep system call failed! \n");
+    }
+
+    pthread_mutex_lock(&mutex);
+    int lenS = S.length();
+    if (lenS < m * l) {
+      S += c[rank];
+    } else {
+      pthread_mutex_unlock(&mutex);
+      break;
+    }
+
   }
-  // Acquire S
-  int lenS = S.length();
 
-  S += c[rank];
+  int checkCondOne(int c0, int c1, int c2)
+  {
+    return (c0 + c1) == c2;
+  }
+
+  int checkCondOne(int c0, int c1, int c2)
+  {
+    return (c0 + 2*c1) == c2;
+  }
+
+  int checkCondOne(int c0, int c1, int c2)
+  {
+    return (c0 - c1) == c2;
+  }
+
+
+
 
 }
