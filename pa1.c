@@ -157,11 +157,16 @@ void checkConditionNum(int threadRank)
     int c2 = 0;
 
     //TODO: Count occurances of vars
-    for (size_t i = threadRank*l; i < threadRank*l+(l); i++) {
-      if(S[i] == c[0])  c0++;
-      else if(S[i] == c[1])  c1++;
-      else if(S[i] == c[2])  c2++;
+    int numSegments = m/n;
+    for (size_t t = threadRank; t < m; t+=n) {
+      printf("%d : Checking threads: %d, %d\n", threadRank, t*l, (l*t+l));
+      for (size_t i = t*l; i < t*l+l; i++) {
+        if(S[i] == c[0])  c0++;
+        else if(S[i] == c[1])  c1++;
+        else if(S[i] == c[2])  c2++;
+      }
     }
+
 
     if(f == 0)
     {
