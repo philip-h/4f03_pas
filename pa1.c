@@ -18,11 +18,14 @@ using namespace std;
 /* Prototypes */
 void *createString(void *);
 int checkArgs(int);
+void checkConditionNum(int);
 
 /* Global vars */
 string S = "";
 int f, n, l, m;
 char* c;
+char* sigma;
+
 pthread_mutex_t stringMutex;
 pthread_mutex_t countMutex;
 
@@ -46,10 +49,18 @@ int main(int argc, char* argv[]) {
   l = atoi(argv[3]);
   m = atoi(argv[4]);
 
-  c = (char*) malloc(sizeof(char)*n);
+  int cSize = argc-5;
 
-  for (short i = 0; i < argc-5; i++) {
+  c = (char*) malloc(sizeof(char)*cSize);
+
+  for (short i = 0; i < cSize; i++) {
     c[i] = *argv[i+5];
+  }
+
+  sigma = (char*) malloc(sizeof(char)*n);
+
+  for (size_t i = 0; i < n; i++) {
+    sigma[i] = (char)(i + (int)'a');
   }
 
   int len = argc - 5;
@@ -74,8 +85,10 @@ int main(int argc, char* argv[]) {
   }
 
   printf("%s\n", S.c_str());
+  printf("%d\n", numVerified);
   free(threads);
   free(c);
+  free(sigma);
 
   return 0;
 }
@@ -101,13 +114,7 @@ int checkArgs(int argc){
     return -1;
   }
 
-  if (argc -5 != n) {
-    printf("The sizef of sigma must be equal to the number of threads\n");
-    return -1;
-  }
-
   return 0;
-
 }
 
 void *createString(void *r) {
@@ -131,39 +138,66 @@ void *createString(void *r) {
     pthread_mutex_lock(&stringMutex);
     int lenS = S.length();
     if (lenS < m * l) {
-      S += c[rank];
+      S += sigma[rank];
     } else {
-      checkConditionNum(rank);
       pthread_mutex_unlock(&stringMutex);
+      checkConditionNum(rank);
       break;
     }
     pthread_mutex_unlock(&stringMutex);
-
   }
 }
 
 void checkConditionNum(int threadRank)
 {
-  int c0 = 0;
-  int c1 = 0;
-  int c2 = 0;
+  if(threadRank + 1 <= m)
+  {
+    int c0 = 0;
+    int c1 = 0;
+    int c2 = 0;
 
-  //TODO: Count occurances of vars
+    //TODO: Count occurances of vars
+    for (size_t i = threadRank*l; i < threadRank*l+(l); i++) {
+      if(S[i] == c[0])  c0++;
+      else if(S[i] == c[1])  c1++;
+      else if(S[i] == c[2])  c2++;
+    }
 
-  if(f == 0)
-  {
-    return (c0 + c1) == c2;
-  }
-  else if(f == 1)
-  {
-    return (c0 + 2*c1) == c2;
-  }
-  else if(f == 2)
-  {
-    return (c0 * c1) == c2;
-  }
-  else if(f == 3)
-  {
-    return (c0 - c1) == c2;
+    if(f == 0)
+    {
+      if((c0 + c1) == c2)
+      {
+        pthread_mutex_lock(&countMutex);
+        numVerified++;
+        pthread_mutex_unlock(&countMutex);
+      }
+    }
+    else if(f == 1)
+    {
+      if((c0 + 2*c1) == c2)
+      {
+        pthread_mutex_lock(&countMutex);
+        numVerified++;
+        pthread_mutex_unlock(&countMutex);
+      }
+    }
+    else if(f == 2)
+    {
+      if((c0 * c1) == c2)
+      {
+        pthread_mutex_lock(&countMutex);
+        numVerified++;
+        pthread_mutex_unlock(&countMutex);
+      }
+    }
+    else if(f == 3)
+    {
+      if((c0 - c1) == c2)
+      {
+        pthread_mutex_lock(&countMutex);
+        numVerified++;
+        pthread_mutex_unlock(&countMutex);
+      }
+    }
   }
 }
