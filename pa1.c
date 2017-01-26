@@ -117,7 +117,7 @@ void *createString(void *r) {
 
   for(int i = 0; i < 1000; i++){
     randSleep = rand() % 400 + 100;
-    andSleepNano = randSleep * MILIS;
+    randSleepNano = randSleep * MILIS;
 
     tim.tv_nsec = randSleepNano;
 
@@ -136,23 +136,19 @@ void *createString(void *r) {
     }
 
   }
+}
 
-  int checkCondOne(int c0, int c1, int c2)
-  {
-    return (c0 + c1) == c2;
-  }
+int checkCondOne(int c0, int c1, int c2)
+{
+  return (c0 + c1) == c2;
+}
 
-  int checkCondOne(int c0, int c1, int c2)
-  {
-    return (c0 + 2*c1) == c2;
-  }
+int checkCondTwo(int c0, int c1, int c2)
+{
+  return (c0 + 2*c1) == c2;
+}
 
-  int checkCondOne(int c0, int c1, int c2)
-  {
-    return (c0 - c1) == c2;
-  }
-
-
-
-
+int checkCondThree(int c0, int c1, int c2)
+{
+  return (c0 - c1) == c2;
 }
