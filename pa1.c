@@ -100,7 +100,7 @@ int checkArgs(int argc){
   }
 
   if (n < 3 || n > 8) {
-    printf("N must be between 0 and 8");
+    printf("N must be between 3 and 8");
     return -1;
   }
 
