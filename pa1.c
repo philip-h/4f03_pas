@@ -23,9 +23,11 @@ int checkArgs(int);
 string S = "";
 int f, n, l, m;
 char* c;
-pthread_mutex_t mutex;
+pthread_mutex_t stringMutex;
+pthread_mutex_t countMutex;
 
 int MILIS = 1000000;
+int numVerified = 0;
 
 int main(int argc, char* argv[]) {
   /**
@@ -126,30 +128,41 @@ void *createString(void *r) {
      printf("Nano sleep system call failed! \n");
     }
 
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&stringMutex);
     int lenS = S.length();
     if (lenS < m * l) {
       S += c[rank];
     } else {
-      pthread_mutex_unlock(&mutex);
+      checkConditionNum(rank);
+      pthread_mutex_unlock(&stringMutex);
       break;
     }
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&stringMutex);
 
   }
 }
 
-int checkConditionNum(int condition, int c0, int c1, int c2)
+void checkConditionNum(int threadRank)
 {
-  if(condition == 0)
+  int c0 = 0;
+  int c1 = 0;
+  int c2 = 0;
+
+  //TODO: Count occurances of vars
+
+  if(f == 0)
   {
     return (c0 + c1) == c2;
   }
-  else if(condition == 0)
+  else if(f == 1)
   {
     return (c0 + 2*c1) == c2;
   }
-  else if(condition == 0)
+  else if(f == 2)
+  {
+    return (c0 * c1) == c2;
+  }
+  else if(f == 3)
   {
     return (c0 - c1) == c2;
   }
