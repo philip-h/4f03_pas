@@ -139,17 +139,18 @@ void *createString(void *r) {
   }
 }
 
-int checkCondOne(int c0, int c1, int c2)
+int checkConditionNum(int condition, int c0, int c1, int c2)
 {
-  return (c0 + c1) == c2;
-}
-
-int checkCondTwo(int c0, int c1, int c2)
-{
-  return (c0 + 2*c1) == c2;
-}
-
-int checkCondThree(int c0, int c1, int c2)
-{
-  return (c0 - c1) == c2;
+  if(condition == 0)
+  {
+    return (c0 + c1) == c2;
+  }
+  else if(condition == 0)
+  {
+    return (c0 + 2*c1) == c2;
+  }
+  else if(condition == 0)
+  {
+    return (c0 - c1) == c2;
+  }
 }
