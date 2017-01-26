@@ -115,7 +115,7 @@ void *createString(void *r) {
   struct timespec tim, tim2;
   tim.tv_sec  = 0;
 
-  for(int i = 0; i < 1000; i++){
+  while(true){
     randSleep = rand() % 400 + 100;
     randSleepNano = randSleep * MILIS;
 
@@ -134,6 +134,7 @@ void *createString(void *r) {
       pthread_mutex_unlock(&mutex);
       break;
     }
+    pthread_mutex_unlock(&mutex);
 
   }
 }
