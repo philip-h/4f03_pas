@@ -32,3 +32,6 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Req Files
+*.pdf
