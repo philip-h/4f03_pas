@@ -114,6 +114,12 @@ int checkArgs(int argc){
     return -1;
   }
 
+  if(m % n != 0)
+  {
+    printf("M does not divide N\n");
+    return -1;
+  }
+
   return 0;
 }
 
