@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     pthread_join(threads[i], NULL);
   }
 
-  printf("%s %s %s\n", S.substr(0,6).c_str(), S.substr(6,6).c_str(), S.substr(12,6).c_str());
+  printf("%s %s %s\n", S.substr(0,4).c_str(), S.substr(4,4).c_str(), S.substr(8,4).c_str());
   printf("%d\n", numVerified);
   free(threads);
   free(c);
@@ -224,26 +224,16 @@ void enforce0(long threadRank) {
 
   int lenS = S.length();
   int i_start = 0, i_end = 0;
-  int numSegments = m/n;
-  // for (size_t i = 0; i < numSegments; i++) {
-  //   if (lenS < i*l + l) {
-  //     i_start = i;
-  //     i_end = i + l;
-  //     break;
-  //   }
-  // }
 
-  // HARD CODE FOR 3 SEGS of LEN 6
-  // 0 to 6
-  if (lenS < 7) {
-    i_start = 0;
-    i_end = 6;
-  } else if (lenS < 13) {
-    i_start = 6;
-    i_end = 12;
-  } else if (lenS < 19) {
-    i_start = 12;
-    i_end = 18;
+  // For enforcing, to check the number of letters, every thread must count the
+  // number of letters in the segment currently being written to... This for
+  // loop calculates this range!
+  for (size_t i = 0; i <= m; i++) {
+    if (lenS < l*i) {
+      i_start = l*i - l;
+      i_end = l * i;
+      break;
+    }
   }
 
   printf("Checking letters %d to %d\n", i_start, i_end);
