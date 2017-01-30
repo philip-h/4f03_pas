@@ -19,7 +19,7 @@ using namespace std;
 int checkArgs(int);
 void *createString(void *);
 void checkConditionNum(int);
-void enforce0(long);
+void enforceRules(long);
 
 /* Global vars */
 string S = "";
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     pthread_join(threads[i], NULL);
   }
 
-  printf("%s %s %s\n", S.substr(0,4).c_str(), S.substr(4,4).c_str(), S.substr(8,4).c_str());
+  printf("%s %s %s\n", S.substr(0,6).c_str(), S.substr(6,6).c_str(), S.substr(12,6).c_str());
   printf("%d\n", numVerified);
   free(threads);
   free(c);
@@ -148,7 +148,7 @@ void *createString(void *r) {
       if (lenS == 0)
         S += sigma[rank];
       else
-        enforce0(rank);
+        enforceRules(rank);
     } else {
       pthread_mutex_unlock(&stringMutex);
       checkConditionNum(rank);
@@ -213,7 +213,7 @@ void checkConditionNum(int threadRank)
   }
 }
 
-void enforce0(long threadRank) {
+void enforceRules(long threadRank) {
 
   printf("Enforcing rule %d for thread %d\n",f, threadRank);
   printf("Current state of S: %s\n", S.c_str());
@@ -245,37 +245,52 @@ void enforce0(long threadRank) {
 
   printf("%d\toccurences: c0: %d, c1: %d, c2: %d \n", threadRank, c0, c1, c2);
 
+  int numC0Needed = 0, numC1Needed = 0, numC2Needed = 0;
   // Calculate which letters are needed to enforce rule 1
-  int numC0Needed = (c2 - c1) - c0;
-  int numC1Needed = (c2 - c0) - c1;
-  int numC2Needed = (c0 + c1) - c2;
+  if (f == 0) {
+    numC0Needed = (c2 - c1) - c0;
+    numC1Needed = (c2 - c0) - c1;
+    numC2Needed = (c0 + c1) - c2;
+  } else if (f == 1) {
+    numC0Needed = (c2 - 2*c1) - c0;
+    numC1Needed = (c2 - c0)/2 - c1;
+    numC2Needed = (c0 + 2*c1) - c2;
+  } else if (f == 2) {
+    numC0Needed = (c2 / c1) - c0;
+    numC1Needed = (c2 / c0) - c1;
+    numC2Needed = (c0 * c1) - c2;
+  } else if (f == 3) {
+    numC0Needed = (c2 + c1) - c0;
+    numC1Needed = (c2 + c0) - c1;
+    numC2Needed = (c0 + c1) - c2;
+  }
 
   if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
     S += sigma[threadRank];
-  } else {
-
-  // printf("Does %c == %c\n", sigma[threadRank], c[0]);
-  // If we need some c0, add it to the string
-  if (sigma[threadRank] == c[0] ) {
-    if (numC0Needed > 0) {
-      S += sigma[threadRank];
-    }
   }
 
-  // If we need some c1, add it to the string
-  else if (sigma[threadRank] == c[1]) {
-    if (numC1Needed > 0) {
-      S += sigma[threadRank];
+  else {
+    // If we need some c0, add it to the string
+    if (sigma[threadRank] == c[0] ) {
+      if (numC0Needed > 0) {
+        S += sigma[threadRank];
+      }
     }
-  }
 
-  // If we need some c2, add it to the string
-  else if (sigma[threadRank] == c[2]) {
-    if (numC2Needed > 0) {
-      S += sigma[threadRank];
+    // If we need some c1, add it to the string
+    else if (sigma[threadRank] == c[1]) {
+      if (numC1Needed > 0) {
+        S += sigma[threadRank];
+      }
+    }
+
+    // If we need some c2, add it to the string
+    else if (sigma[threadRank] == c[2]) {
+      if (numC2Needed > 0) {
+        S += sigma[threadRank];
+      }
     }
   }
-}
 
 
 
