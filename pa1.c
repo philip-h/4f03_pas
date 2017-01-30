@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     pthread_join(threads[i], NULL);
   }
 
-  printf("%s %s %s\n", S.substr(0,6).c_str(), S.substr(6,6).c_str(), S.substr(12,6).c_str());
+  printf("%s\n", S.c_str());
   printf("%d\n", numVerified);
   free(threads);
   free(c);
@@ -256,9 +256,15 @@ void enforceRules(long threadRank) {
     numC1Needed = (c2 - c0)/2 - c1;
     numC2Needed = (c0 + 2*c1) - c2;
   } else if (f == 2) {
-    numC0Needed = (c2 / c1) - c0;
-    numC1Needed = (c2 / c0) - c1;
-    numC2Needed = (c0 * c1) - c2;
+    if (c0 == 0 ) {
+      numC0Needed = 1;
+    } else if (c1 == 0) {
+      numC1Needed = 1;
+    } else {
+      numC0Needed = (c2 / c1) - c0;
+      numC1Needed = (c2 / c0) - c1;
+      numC2Needed = (c0 * c1) - c2;
+    }
   } else if (f == 3) {
     numC0Needed = (c2 + c1) - c0;
     numC1Needed = (-c2 + c0) - c1;
