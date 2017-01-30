@@ -261,8 +261,8 @@ void enforceRules(long threadRank) {
     numC2Needed = (c0 * c1) - c2;
   } else if (f == 3) {
     numC0Needed = (c2 + c1) - c0;
-    numC1Needed = (c2 + c0) - c1;
-    numC2Needed = (c0 + c1) - c2;
+    numC1Needed = (-c2 + c0) - c1;
+    numC2Needed = (c0 - c1) - c2;
   }
 
   if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
