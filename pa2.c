@@ -274,7 +274,7 @@ void enforce0(long rank) {
         // Only let in a letter used in the property check
         if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
             S += sigma[rank];
-        }  
+        }
 
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         // If the current segment is one away from being empty
@@ -282,8 +282,8 @@ void enforce0(long rank) {
             // And we are not appending a letter used in the property check
             if (sigma[rank] != c[0] && sigma[rank] != c[1] && sigma[rank] != c[2]) {
                 S += sigma[rank];
-            } 
-            // If the current segment is being filled, fill it  
+            }
+            // If the current segment is being filled, fill it
         } else {
             S += sigma[rank];
         }
@@ -342,7 +342,7 @@ void enforce1(long rank) {
         if (sigma[rank] == c[1]) {
             /* Don't add a c1*/
             sigma[rank] = '\0';
-        } 
+        }
     }
     else if (l == 3) {
         if (sigma[rank] == c[0]) {
@@ -350,14 +350,14 @@ void enforce1(long rank) {
             sigma[rank] = '\0';
         }
         numC1Needed = (c2-c0+1)/2 -c1;
-    } 
+    }
 
     // If the current segment is empty
     if (lenCurrSegment == 0) {
         // Only let in a letter used in the property check
         if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
             S += sigma[rank];
-        }  
+        }
 
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         if (sigma[rank] == c[0] || sigma[rank] == c[2] || sigma[rank] == c[1]) {
@@ -371,12 +371,12 @@ void enforce1(long rank) {
                 // dont have enough room (REMAKE THIS COMMENT)
                 if (l - lenCurrSegment >= 2) {
                     S += sigma[rank];
-                }  
+                }
             } else if(sigma[rank] == c[1]){
                 if (l - lenCurrSegment >= 3) {
                     S += sigma[rank];
                 }
-            }      
+            }
         } else {
             S += sigma[rank];
         }
@@ -389,7 +389,7 @@ void enforce1(long rank) {
         } else if (sigma[rank] == c[2] && numC2Needed > 0) {
             S += sigma[rank];
         }
-    }   
+    }
 }
 
 
@@ -437,7 +437,7 @@ void enforce2(long rank) {
         if (sigma[rank] == c[2]) {
             /* Don't add a c2*/
             sigma[rank] = '\0';
-        } 
+        }
     }
 
     int lenCurrSegment = lenS % l;
@@ -445,7 +445,7 @@ void enforce2(long rank) {
         // Only let in a letter used in the property check
         if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
             S += sigma[rank];
-        }  
+        }
 
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
@@ -459,13 +459,13 @@ void enforce2(long rank) {
                     S += sigma[rank];
                 }
             }
-            // if the incomming letter is b 
+            // if the incomming letter is b
             else if (sigma[rank] == c[1]) {
                 if (l - lenCurrSegment > c0) {
                     S += sigma[rank];
                 }
-            } 
-            // if the incomming letter is c 
+            }
+            // if the incomming letter is c
             else if (sigma[rank] == c[2]) {
                 /*Do NOTHING*/
             }
@@ -487,7 +487,71 @@ void enforce2(long rank) {
 
 }
 
-void enforce3(long rank) {}
+void enforce3(long rank) {
+    // Count how many occurences of c0, c1 and c2 are already in S
+    int c0 = 0, c1 = 0, c2 = 0;
+
+    int lenS = S.length();
+    int i_start = 0, i_end = 0;
+
+    // For enforcing, to check the number of letters, every thread must count the
+    // number of letters in the segment currently being written to... This for
+    // loop calculates this range!
+    for (size_t i = 0; i <= m; i++) {
+        if (lenS < l*i) {
+            i_start = l*i - l;
+            i_end = l * i;
+            break;
+        }
+    }
+
+    // Count the number of occurrences of c[0..2] in the current segment
+    for (size_t i = i_start; i < i_end; i++) {
+        if(S[i] == c[0])  c0++;
+        else if(S[i] == c[1])  c1++;
+        else if(S[i] == c[2])  c2++;
+    }
+
+    int numC0Needed = (c2 + c1) - c0;
+    int numC1Needed = (c0 - c2) - c1;
+    int numC2Needed = (c0 - c1) - c2;
+
+    if (n == 3 && l % 2 == 1) {
+        /*ERROR*/
+        fprintf(stderr, "n and l don't work for enforcing rule 0\n");
+    }
+
+
+    int lenCurrSegment = lenS % l;
+    // If the current segment is empty
+    if (lenCurrSegment == 0) {
+        // Only let in a letter used in the property check
+        if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
+            S += sigma[rank];
+        }
+
+    } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
+        // If the current segment is one away from being empty
+        if (l - lenCurrSegment == 1) {
+            // And we are not appending a letter used in the property check
+            if (sigma[rank] != c[0] && sigma[rank] != c[1] && sigma[rank] != c[2]) {
+                S += sigma[rank];
+            }
+            // If the current segment is being filled, fill it
+        } else {
+            S += sigma[rank];
+        }
+    } else {
+        // If we are trying to add c0, and we need c0, add c0
+        if (sigma[rank] == c[0] && numC0Needed > 0) {
+            S += sigma[rank];
+        } else if (sigma[rank] == c[1] && numC1Needed > 0) {
+            S += sigma[rank];
+        } else if (sigma[rank] == c[2] && numC2Needed > 0) {
+            S += sigma[rank];
+        }
+    }
+}
 
 /**
   Forces the rules f0 - f1 according to arguments specified.
