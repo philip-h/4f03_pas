@@ -1,4 +1,4 @@
-CFLAGS=-lpthread -std=c++11
+CFLAGS=-lpthread -std=c++11 -fopenmp
 
 pa2.x : pa2.c
 	g++ -o $@ $^ $(CFLAGS)

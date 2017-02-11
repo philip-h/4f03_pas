@@ -12,6 +12,7 @@ Theo Stone (stonet)
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <omp.h>
 
 
 using namespace std;
@@ -75,22 +76,17 @@ int main(int argc, char* argv[]) {
       Set up Posix Threads
       */
     srand(time(NULL));
-    pthread_t* threads = (pthread_t*) malloc(n*sizeof(pthread_t));
 
     printf("Starting Threads ...\n");
-    for (size_t i = 0; i < n; i++) {
-        pthread_create(&threads[i], NULL, createString, (void *)i);
-    }
 
-    for (size_t i = 0; i < n; i++) {
-        pthread_join(threads[i], NULL);
+#   pragma omp parallel num_threads(n)
+    {
+        createString(0);
     }
 
     printf("%s\n", S.c_str());
     printf("%d\n", numVerified);
 
-    // Free allocated memory!
-    free(threads);
     free(c);
     free(sigma);
 
@@ -136,7 +132,7 @@ int checkArgs(int argc){
   in the command line arguments
   */
 void *createString(void *r) {
-    long rank = (long) r;
+    int rank = omp_get_thread_num();
 
     int randSleep, randSleepNano;
     struct timespec tim, tim2;
