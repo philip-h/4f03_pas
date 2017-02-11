@@ -34,8 +34,8 @@ int f, n, l, m;
 char* c;
 char* sigma;
 
-pthread_mutex_t stringMutex;
-pthread_mutex_t countMutex;
+omp_lock_t stringLock;
+omp_lock_t countLock;
 
 int MILIS = 1000000;
 int numVerified = 0;
@@ -149,7 +149,7 @@ void *createString(void *r) {
             printf("Nano sleep system call failed! \n");
         }
 
-        pthread_mutex_lock(&stringMutex);
+        omp_set_lock(&stringLock);
         int lenS = S.length();
         if (lenS < m * l) {
             switch(f) {
@@ -159,11 +159,11 @@ void *createString(void *r) {
                 case 3: enforce3(rank); break;
             }
         } else {
-            pthread_mutex_unlock(&stringMutex);
+            omp_unset_lock(&stringLock);
             checkConditionNum(rank);
             break;
         }
-        pthread_mutex_unlock(&stringMutex);
+        omp_unset_lock(&stringLock);
     }
 }
 
@@ -189,36 +189,36 @@ void checkConditionNum(int threadRank)
             {
                 if((c0 + c1) == c2)
                 {
-                    pthread_mutex_lock(&countMutex);
+                    omp_set_lock(&countLock);
                     numVerified++;
-                    pthread_mutex_unlock(&countMutex);
+                    omp_unset_lock(&countLock);
                 }
             }
             else if(f == 1)
             {
                 if((c0 + 2*c1) == c2)
                 {
-                    pthread_mutex_lock(&countMutex);
+                    omp_set_lock(&countLock);
                     numVerified++;
-                    pthread_mutex_unlock(&countMutex);
+                    omp_unset_lock(&countLock);
                 }
             }
             else if(f == 2)
             {
                 if((c0 * c1) == c2)
                 {
-                    pthread_mutex_lock(&countMutex);
+                    omp_set_lock(&countLock);
                     numVerified++;
-                    pthread_mutex_unlock(&countMutex);
+                    omp_unset_lock(&countLock);
                 }
             }
             else if(f == 3)
             {
                 if((c0 - c1) == c2)
                 {
-                    pthread_mutex_lock(&countMutex);
+                    omp_set_lock(&countLock);
                     numVerified++;
-                    pthread_mutex_unlock(&countMutex);
+                    omp_unset_lock(&countLock);
                 }
             }
 
