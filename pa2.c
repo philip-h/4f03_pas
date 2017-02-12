@@ -90,6 +90,15 @@ int main(int argc, char* argv[]) {
         createString(0);
     }
 
+    FILE *f = fopen("out.txt", "w");
+    if (f == NULL) {
+        printf("Error opening file\n");
+        return -1;
+    }
+
+    fprintf(f, "%s\n%d\n", S.c_str(), numVerified);
+    fclose(f);
+
     printf("%s\n", S.c_str());
     printf("%d\n", numVerified);
 
