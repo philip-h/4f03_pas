@@ -25,8 +25,6 @@ void enforce0(long);
 void enforce1(long);
 void enforce2(long);
 void enforce3(long);
-//TODO: delete
-void enforceRules(long);
 
 /* Global vars */
 string S = "";
@@ -40,12 +38,20 @@ omp_lock_t countLock;
 int MILIS = 1000000;
 int numVerified = 0;
 
+string error = "Useage: ./pa2.x i N L M c0 c1 c2\n"
+               "Where\n"
+               "i\tthe index of the property F_i which each segment will satisfy\n"
+               "N\tthe number of threads\n"
+               "L\tthe length of each segment\n"
+               "M\tthe number of segments to generate\n"
+               "c_i\tthe letters to be used in the property check\n";
+
 int main(int argc, char* argv[]) {
     /**
       Process command line arguments
       */
     if (argc < 8) {
-        printf("Yo dawg, you didn't do the command line thing right... try again\n");
+        printf("Too few arguments\n%s", error.c_str());
         return -1;
     }
 
@@ -99,28 +105,28 @@ int main(int argc, char* argv[]) {
   */
 int checkArgs(int argc){
     if (f < 0 || f > 3) {
-        printf("F must be between 0 and 3\n");
+        printf("F must be between 0 and 3\n%s", error.c_str());
         return -1;
     }
 
     if (n < 3 || n > 8) {
-        printf("N must be between 3 and 8");
+        printf("N must be between 3 and 8\n%s", error.c_str());
         return -1;
     }
 
     if (l < 0) {
-        printf("L cannot be negative\n");
+        printf("L cannot be negative\n%s", error.c_str());
         return -1;
     }
 
     if (m < 0) {
-        printf("M cannot be negative\n");
+        printf("M cannot be negative\n%s", error.c_str());
         return -1;
     }
 
     if(m % n != 0)
     {
-        printf("M does not divide N\n");
+        printf("M does not divide N\n%s", error.c_str());
         return -1;
     }
 
@@ -229,8 +235,8 @@ void checkConditionNum(int threadRank)
     }
 }
 
+/*Enforce all 4 rules in 4 separate methods*/
 void enforce0(long rank) {
-    // Count how many occurences of c0, c1 and c2 are already in S
     int c0 = 0, c1 = 0, c2 = 0;
 
     int lenS = S.length();
@@ -260,11 +266,12 @@ void enforce0(long rank) {
 
     if (n == 3 && l % 2 == 1) {
         /*ERROR*/
-        fprintf(stderr, "n and l don't work for enforcing rule 0\n");
+        fprintf(stderr, "N and L don't work for enforcing rule 0\n");
+        exit(-1);
     }
 
-
     int lenCurrSegment = lenS % l;
+
     // If the current segment is empty
     if (lenCurrSegment == 0) {
         // Only let in a letter used in the property check
@@ -272,19 +279,21 @@ void enforce0(long rank) {
             S += sigma[rank];
         }
 
+    // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
-        // If the current segment is one away from being empty
+        // If the current segment does not have enough room left
         if (l - lenCurrSegment == 1) {
-            // And we are not appending a letter used in the property check
+            // Only allow a letter that is not part of the property
             if (sigma[rank] != c[0] && sigma[rank] != c[1] && sigma[rank] != c[2]) {
                 S += sigma[rank];
             }
-            // If the current segment is being filled, fill it
+        // Otherwise, add a letter!!
         } else {
             S += sigma[rank];
         }
+    // If the current segment is not empty and the current property is not satisfied
     } else {
-        // If we are trying to add c0, and we need c0, add c0
+        // Add a letter according to its need
         if (sigma[rank] == c[0] && numC0Needed > 0) {
             S += sigma[rank];
         } else if (sigma[rank] == c[1] && numC1Needed > 0) {
@@ -296,9 +305,6 @@ void enforce0(long rank) {
 }
 
 void enforce1(long rank) {
-    /*printf("Currrent string start:\t%s\n", S.c_str());*/
-    /*printf("trying to add %c\n", sigma[rank]);*/
-    // Count how many occurences of c0, c1 and c2 are already in S
     int c0 = 0, c1 = 0, c2 = 0;
 
     int lenS = S.length();
@@ -328,23 +334,27 @@ void enforce1(long rank) {
 
     if (n == 3 && l == 1) {
         /*ERROR*/
-        fprintf(stderr, "n and l don't work for enforcing rule 1\n");
+        fprintf(stderr, "N and L don't work for enforcing rule 1\n");
+        exit(-1);
     }
 
 
     int lenCurrSegment = lenS % l;
 
+    // When l == 2 or 4, the solution will never contain c1
     if (l == 2 || l == 4) {
         if (sigma[rank] == c[1]) {
             /* Don't add a c1*/
             sigma[rank] = '\0';
         }
     }
+    // When l == 3 the solution will never contain c0
     else if (l == 3) {
         if (sigma[rank] == c[0]) {
             /* Don't add a c0 */
             sigma[rank] = '\0';
         }
+        // When l == 3, this calculation should round up
         numC1Needed = (c2-c0+1)/2 -c1;
     }
 
@@ -355,29 +365,42 @@ void enforce1(long rank) {
             S += sigma[rank];
         }
 
+    // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
+        // If the incomming letter is a property checked letter
         if (sigma[rank] == c[0] || sigma[rank] == c[2] || sigma[rank] == c[1]) {
+            // If the current segment does not have enough room left
             if(l - lenCurrSegment == 1 && n == 3){
-                // Randomness has messed up, let's try again
-                printf("Resseting segment\n");
+                // Reset the segment and try again
                 S = S.substr(0,lenS-lenCurrSegment);
             }
-
+            /* 
+             * If the incomming letter is c0 or c2, make sure 
+             * there are at least 2 spots left. If there are, 
+             * append the letter
+             */
             else if (sigma[rank] == c[0] || sigma[rank] == c[2]) {
-                // dont have enough room (REMAKE THIS COMMENT)
                 if (l - lenCurrSegment >= 2) {
                     S += sigma[rank];
                 }
+            /* 
+             * If the incomming letter is c1, make sure 
+             * there are at least 3 spots left. If there are, 
+             * append the letter
+             */
             } else if(sigma[rank] == c[1]){
                 if (l - lenCurrSegment >= 3) {
                     S += sigma[rank];
                 }
             }
+        // If the incomming letter is not a property checked letter, add it    
         } else {
             S += sigma[rank];
         }
+        
+    // If the current segment is not empty and the current property is not satisfied
     } else {
-        // If we are trying to add c0, and we need c0, add c0
+        // Add a letter according to it's need
         if (sigma[rank] == c[0] && numC0Needed > 0) {
             S += sigma[rank];
         } else if (sigma[rank] == c[1] && numC1Needed > 0) {
@@ -390,9 +413,6 @@ void enforce1(long rank) {
 
 
 void enforce2(long rank) {
-    printf("Currrent string start:\t%s\n", S.c_str());
-    printf("trying to add %c\n", sigma[rank]);
-    // Count how many occurences of c0, c1 and c2 are already in S
     int c0 = 0, c1 = 0, c2 = 0;
 
     int lenS = S.length();
@@ -421,14 +441,15 @@ void enforce2(long rank) {
     int numC2Needed = (c0*c1) - c2;
 
 
+    // Make sure we are not dividing by 0
     if (c1 != 0) {
         numC0Needed = (c2/c1) - c0;
     }
-
     if (c0 != 0) {
         numC1Needed = (c2/c0) - c1;
     }
 
+    // When l == 1 the solution will never contain c2
     if (l == 1) {
         if (sigma[rank] == c[2]) {
             /* Don't add a c2*/
@@ -437,40 +458,55 @@ void enforce2(long rank) {
     }
 
     int lenCurrSegment = lenS % l;
+
+    // If the current segment is empty
     if (lenCurrSegment == 0) {
         // Only let in a letter used in the property check
         if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
             S += sigma[rank];
         }
 
+    // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
+        // If the incomming letter is a property checked letter
         if (sigma[rank] == c[0] || sigma[rank] == c[1] || sigma[rank] == c[2]) {
+            // If the current segment does not have enough room left
             if (l - lenCurrSegment == 1 && n == 3) {
-                printf("messed up, resetting string\n");
+                // Reset the segment and try again
                 S = S.substr(0,lenS - lenCurrSegment);
             }
-            // if the incomming letter is a
+            /* 
+             * If the incomming letter is c0, make sure 
+             * there are at least c1 spots left. If there are, 
+             * append the letter
+             */
             if (sigma[rank] == c[0]) {
                 if (l - lenCurrSegment > c1){
                     S += sigma[rank];
                 }
             }
-            // if the incomming letter is b
+            /* 
+             * If the incomming letter is c1, make sure 
+             * there are at least c0 spots left. If there are, 
+             * append the letter
+             */
             else if (sigma[rank] == c[1]) {
                 if (l - lenCurrSegment > c0) {
                     S += sigma[rank];
                 }
             }
-            // if the incomming letter is c
+            // If the incomming letter is c2
             else if (sigma[rank] == c[2]) {
                 /*Do NOTHING*/
             }
         }
+        // If the incomming letter is not a property checked letter, add it    
         else {
             S += sigma[rank];
         }
+    // If the current segment is not empty and the current property is not satisfied
     } else {
-        // If we are trying to add c0, and we need c0, add c0
+        // Add a letter according to it's need
         if (sigma[rank] == c[0] && numC0Needed > 0) {
             S += sigma[rank];
         } else if (sigma[rank] == c[1] && numC1Needed > 0) {
@@ -479,12 +515,9 @@ void enforce2(long rank) {
             S += sigma[rank];
         }
     }
-    printf("ending string %s\n", S.c_str());
-
 }
 
 void enforce3(long rank) {
-    // Count how many occurences of c0, c1 and c2 are already in S
     int c0 = 0, c1 = 0, c2 = 0;
 
     int lenS = S.length();
@@ -514,11 +547,13 @@ void enforce3(long rank) {
 
     if (n == 3 && l % 2 == 1) {
         /*ERROR*/
-        fprintf(stderr, "n and l don't work for enforcing rule 0\n");
+        fprintf(stderr, "N and L don't work for enforcing rule 3\n");
+        exit(-1);
     }
 
 
     int lenCurrSegment = lenS % l;
+
     // If the current segment is empty
     if (lenCurrSegment == 0) {
         // Only let in a letter used in the property check
@@ -526,19 +561,21 @@ void enforce3(long rank) {
             S += sigma[rank];
         }
 
+    // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
-        // If the current segment is one away from being empty
+        // If the current segment does not have enough room left
         if (l - lenCurrSegment == 1) {
-            // And we are not appending a letter used in the property check
+            // Only allow a letter that is not part of the property
             if (sigma[rank] != c[0] && sigma[rank] != c[1] && sigma[rank] != c[2]) {
                 S += sigma[rank];
             }
-            // If the current segment is being filled, fill it
+        // Otherwise, add a letter!!
         } else {
             S += sigma[rank];
         }
+    // If the current segment is not empty and the current property is not satisfied
     } else {
-        // If we are trying to add c0, and we need c0, add c0
+        // Add a letter according to its need
         if (sigma[rank] == c[0] && numC0Needed > 0) {
             S += sigma[rank];
         } else if (sigma[rank] == c[1] && numC1Needed > 0) {
@@ -547,103 +584,4 @@ void enforce3(long rank) {
             S += sigma[rank];
         }
     }
-}
-
-/**
-  Forces the rules f0 - f1 according to arguments specified.
-  */
-void enforceRules(long threadRank) {
-    // Count how many occurences of c0, c1 and c2 are already in S
-    int c0 = 0, c1 = 0, c2 = 0;
-
-    int lenS = S.length();
-    int i_start = 0, i_end = 0;
-
-    // For enforcing, to check the number of letters, every thread must count the
-    // number of letters in the segment currently being written to... This for
-    // loop calculates this range!
-    for (size_t i = 0; i <= m; i++) {
-        if (lenS < l*i) {
-            i_start = l*i - l;
-            i_end = l * i;
-            break;
-        }
-    }
-
-    // Count the number of occurrences of c[0..2] in the current segment
-    for (size_t i = i_start; i < i_end; i++) {
-        if(S[i] == c[0])  c0++;
-        else if(S[i] == c[1])  c1++;
-        else if(S[i] == c[2])  c2++;
-    }
-
-    int numC0Needed = 0, numC1Needed = 0, numC2Needed = 0;
-    // Calculate which letters are needed to enforce rule 0
-    if (f == 0) {
-        numC0Needed = (c2 - c1) - c0;
-        numC1Needed = (c2 - c0) - c1;
-        numC2Needed = (c0 + c1) - c2;
-    }
-    // Calculate which letters are needed to enforce rule 1
-    else if (f == 1) {
-        numC0Needed = (c2 - 2*c1) - c0;
-        numC1Needed = (c2 - c0)/2 - c1;
-        numC2Needed = (c0 + 2*c1) - c2;
-    }
-    // Calculate which letters are needed to enforce rule 2
-    else if (f == 2) {
-        if (c0 == 0 ) {
-            numC0Needed = 1;
-        } else if (c1 == 0) {
-            numC1Needed = 1;
-        } else {
-            numC0Needed = (c2 / c1) - c0;
-            numC1Needed = (c2 / c0) - c1;
-            numC2Needed = (c0 * c1) - c2;
-        }
-    }
-    // Calculate which letters are needed to enforce rule 3
-    else if (f == 3) {
-        numC0Needed = (c2 + c1) - c0;
-        numC1Needed = (-c2 + c0) - c1;
-        numC2Needed = (c0 - c1) - c2;
-    }
-
-    // if no letters are needed, any letter may be appended to S
-    if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
-        // If we are beginning a new segment, only let c0, c1 or c2
-        if (lenS % l == 0) {
-            if (sigma[threadRank] == c[0] || sigma[threadRank] == c[1] || sigma[threadRank] == c[2]) {
-                S += sigma[threadRank];
-            }
-        }
-        S += sigma[threadRank];
-    }
-
-    else {
-        // If we need some c0, add it to the string
-        if (sigma[threadRank] == c[0] ) {
-            if (numC0Needed > 0) {
-                S += sigma[threadRank];
-            }
-        }
-
-
-        // If we need some c1, add it to the string
-        else if (sigma[threadRank] == c[1]) {
-            if (numC1Needed > 0) {
-                S += sigma[threadRank];
-            }
-        }
-
-        // If we need some c2, add it to the string
-        else if (sigma[threadRank] == c[2]) {
-            if (numC2Needed > 0) {
-                S += sigma[threadRank];
-            }
-        }
-    }
-
-
-
 }
