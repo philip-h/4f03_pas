@@ -17,11 +17,11 @@
 #endif
 
 static void
-appendprog_3(struct svc_req *rqstp, register SVCXPRT *transp)
+append_prog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
-		char *rpcinitappendserver_3_arg;
-		char rpcappend_3_arg;
+		append_init_params rpcinitappendserver_1_arg;
+		char rpcappend_1_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -33,15 +33,15 @@ appendprog_3(struct svc_req *rqstp, register SVCXPRT *transp)
 		return;
 
 	case RPCInitAppendServer:
-		_xdr_argument = (xdrproc_t) xdr_wrapstring;
+		_xdr_argument = (xdrproc_t) xdr_append_init_params;
 		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) rpcinitappendserver_3_svc;
+		local = (char *(*)(char *, struct svc_req *)) rpcinitappendserver_1_svc;
 		break;
 
 	case RPCAppend:
 		_xdr_argument = (xdrproc_t) xdr_char;
 		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) rpcappend_3_svc;
+		local = (char *(*)(char *, struct svc_req *)) rpcappend_1_svc;
 		break;
 
 	default:
@@ -69,15 +69,15 @@ main (int argc, char **argv)
 {
 	register SVCXPRT *transp;
 
-	pmap_unset (APPENDPROG, APPENDPROGVERS);
+	pmap_unset (APPEND_PROG, APPEND_VERS);
 
 	transp = svcudp_create(RPC_ANYSOCK);
 	if (transp == NULL) {
 		fprintf (stderr, "%s", "cannot create udp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, APPENDPROG, APPENDPROGVERS, appendprog_3, IPPROTO_UDP)) {
-		fprintf (stderr, "%s", "unable to register (APPENDPROG, APPENDPROGVERS, udp).");
+	if (!svc_register(transp, APPEND_PROG, APPEND_VERS, append_prog_1, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (APPEND_PROG, APPEND_VERS, udp).");
 		exit(1);
 	}
 
@@ -86,8 +86,8 @@ main (int argc, char **argv)
 		fprintf (stderr, "%s", "cannot create tcp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, APPENDPROG, APPENDPROGVERS, appendprog_3, IPPROTO_TCP)) {
-		fprintf (stderr, "%s", "unable to register (APPENDPROG, APPENDPROGVERS, tcp).");
+	if (!svc_register(transp, APPEND_PROG, APPEND_VERS, append_prog_1, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (APPEND_PROG, APPEND_VERS, tcp).");
 		exit(1);
 	}
 

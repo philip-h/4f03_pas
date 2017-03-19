@@ -7,28 +7,40 @@
 #include "verify.h"
 
 int *
-rpcinitverifyserver_1_svc(char **argp, struct svc_req *rqstp)
+rpcinitverifyserver_2_svc(verify_init_params *argp, struct svc_req *rqstp)
 {
 	static int  result;
 
 	/*
 	 * insert server code here
 	 */
-    printf("%s\n", *argp);
     result = 5;
 
 	return &result;
 }
 
-int *
-rpcgetseg_1_svc(int *argp, struct svc_req *rqstp)
+char **
+rpcgetseg_2_svc(int *argp, struct svc_req *rqstp)
 {
-	static int  result;
+	static char * result;
 
 	/*
 	 * insert server code here
 	 */
-    result = 4;
+    result = "later";
+
+	return &result;
+}
+
+char **
+rpcgets_2_svc(void *argp, struct svc_req *rqstp)
+{
+	static char * result;
+
+	/*
+	 * insert server code here
+	 */
+    result = "hello";
 
 	return &result;
 }

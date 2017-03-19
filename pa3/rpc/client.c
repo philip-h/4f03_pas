@@ -7,73 +7,76 @@
 #include "append.h"
 #include "verify.h"
 
-void appendprog_3(char *host)
+
+void
+verify_prog_2(char *host)
 {
 	CLIENT *clnt;
 	int  *result_1;
-	char * rpcinitappendserver_3_arg = "hello";
-	int  *result_2;
-	char  rpcappend_3_arg;
+	verify_init_params  rpcinitverifyserver_2_arg;
+	char * *result_2;
+	int  rpcgetseg_2_arg;
+	char * *result_3;
+	char *rpcgets_2_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, APPENDPROG, APPENDPROGVERS, "udp");
+	clnt = clnt_create (host, VERIFY_PROG, VERIFY_VERS, "udp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
 	}
 #endif	/* DEBUG */
 
-	result_1 = rpcinitappendserver_3(&rpcinitappendserver_3_arg, clnt);
+	result_1 = rpcinitverifyserver_2(&rpcinitverifyserver_2_arg, clnt);
 	if (result_1 == (int *) NULL) {
 		clnt_perror (clnt, "call failed");
-	}else {
-        printf("append server init\n");
-    } 
-	result_2 = rpcappend_3(&rpcappend_3_arg, clnt);
-	if (result_2 == (int *) NULL) {
+	}
+	result_2 = rpcgetseg_2(&rpcgetseg_2_arg, clnt);
+	if (result_2 == (char **) NULL) {
 		clnt_perror (clnt, "call failed");
-	} else {
-        printf("append server append\n");
-    }
+	}
+	result_3 = rpcgets_2((void*)&rpcgets_2_arg, clnt);
+	if (result_3 == (char **) NULL) {
+		clnt_perror (clnt, "call failed");
+	}
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */
 }
 
-void verifyprog_1(char *host)
+void
+append_prog_1(char *host)
 {
 	CLIENT *clnt;
 	int  *result_1;
-	char * rpcinitverifyserver_1_arg = "supp duude";
+	append_init_params  rpcinitappendserver_1_arg;
 	int  *result_2;
-	int  rpcgetseg_1_arg;
+	char  rpcappend_1_arg;
 
 #ifndef	DEBUG
-	clnt = clnt_create (host, VERIFYPROG, VERIFYPROGVERS, "udp");
+	clnt = clnt_create (host, APPEND_PROG, APPEND_VERS, "udp");
 	if (clnt == NULL) {
 		clnt_pcreateerror (host);
 		exit (1);
 	}
 #endif	/* DEBUG */
 
-	result_1 = rpcinitverifyserver_1(&rpcinitverifyserver_1_arg, clnt);
+	result_1 = rpcinitappendserver_1(&rpcinitappendserver_1_arg, clnt);
 	if (result_1 == (int *) NULL) {
 		clnt_perror (clnt, "call failed");
-	} else {
-	    printf("ver server init\n");
 	}
-	result_2 = rpcgetseg_1(&rpcgetseg_1_arg, clnt);
+	result_2 = rpcappend_1(&rpcappend_1_arg, clnt);
 	if (result_2 == (int *) NULL) {
 		clnt_perror (clnt, "call failed");
-	} else {
-	    printf("ver server get seg\n");
 	}
 #ifndef	DEBUG
 	clnt_destroy (clnt);
 #endif	 /* DEBUG */
 }
 
-int main (int argc, char *argv[])
+
+int
+main (int argc, char *argv[])
 {
 	char *host;
 
@@ -82,7 +85,7 @@ int main (int argc, char *argv[])
 		exit (1);
 	}
 	host = argv[1];
-	appendprog_3 (host);
-    verifyprog_1 (host);
+	verify_prog_2 (host);
+    append_prog_1 (host);
 exit (0);
 }

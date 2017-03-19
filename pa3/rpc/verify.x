@@ -1,6 +1,14 @@
-program VERIFYPROG { 
-    version VERIFYPROGVERS { 
-        int RPCInitVerifyServer(string) = 1; 
-        int RPCGetSeg(char) = 2; 
-    } = 1; 
-} = 0x01310455;
+struct verify_init_params {
+    int n;
+    int l;
+    int m;
+};
+
+program VERIFY_PROG {
+    version VERIFY_VERS {
+        int RPCInitVerifyServer(verify_init_params) = 1;
+        string RPCGetSeg(int) = 2;
+        string RPCGetS() = 3;
+    } = 2;
+
+} = 0x01327857;

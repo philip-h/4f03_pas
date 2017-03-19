@@ -17,11 +17,11 @@
 #endif
 
 static void
-verifyprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
+verify_prog_2(struct svc_req *rqstp, register SVCXPRT *transp)
 {
 	union {
-		char *rpcinitverifyserver_1_arg;
-		int rpcgetseg_1_arg;
+		verify_init_params rpcinitverifyserver_2_arg;
+		int rpcgetseg_2_arg;
 	} argument;
 	char *result;
 	xdrproc_t _xdr_argument, _xdr_result;
@@ -33,15 +33,21 @@ verifyprog_1(struct svc_req *rqstp, register SVCXPRT *transp)
 		return;
 
 	case RPCInitVerifyServer:
-		_xdr_argument = (xdrproc_t) xdr_wrapstring;
+		_xdr_argument = (xdrproc_t) xdr_verify_init_params;
 		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) rpcinitverifyserver_1_svc;
+		local = (char *(*)(char *, struct svc_req *)) rpcinitverifyserver_2_svc;
 		break;
 
 	case RPCGetSeg:
 		_xdr_argument = (xdrproc_t) xdr_int;
-		_xdr_result = (xdrproc_t) xdr_int;
-		local = (char *(*)(char *, struct svc_req *)) rpcgetseg_1_svc;
+		_xdr_result = (xdrproc_t) xdr_wrapstring;
+		local = (char *(*)(char *, struct svc_req *)) rpcgetseg_2_svc;
+		break;
+
+	case RPCGetS:
+		_xdr_argument = (xdrproc_t) xdr_void;
+		_xdr_result = (xdrproc_t) xdr_wrapstring;
+		local = (char *(*)(char *, struct svc_req *)) rpcgets_2_svc;
 		break;
 
 	default:
@@ -69,15 +75,15 @@ main (int argc, char **argv)
 {
 	register SVCXPRT *transp;
 
-	pmap_unset (VERIFYPROG, VERIFYPROGVERS);
+	pmap_unset (VERIFY_PROG, VERIFY_VERS);
 
 	transp = svcudp_create(RPC_ANYSOCK);
 	if (transp == NULL) {
 		fprintf (stderr, "%s", "cannot create udp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, VERIFYPROG, VERIFYPROGVERS, verifyprog_1, IPPROTO_UDP)) {
-		fprintf (stderr, "%s", "unable to register (VERIFYPROG, VERIFYPROGVERS, udp).");
+	if (!svc_register(transp, VERIFY_PROG, VERIFY_VERS, verify_prog_2, IPPROTO_UDP)) {
+		fprintf (stderr, "%s", "unable to register (VERIFY_PROG, VERIFY_VERS, udp).");
 		exit(1);
 	}
 
@@ -86,8 +92,8 @@ main (int argc, char **argv)
 		fprintf (stderr, "%s", "cannot create tcp service.");
 		exit(1);
 	}
-	if (!svc_register(transp, VERIFYPROG, VERIFYPROGVERS, verifyprog_1, IPPROTO_TCP)) {
-		fprintf (stderr, "%s", "unable to register (VERIFYPROG, VERIFYPROGVERS, tcp).");
+	if (!svc_register(transp, VERIFY_PROG, VERIFY_VERS, verify_prog_2, IPPROTO_TCP)) {
+		fprintf (stderr, "%s", "unable to register (VERIFY_PROG, VERIFY_VERS, tcp).");
 		exit(1);
 	}
 

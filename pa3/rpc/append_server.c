@@ -7,30 +7,27 @@
 #include "append.h"
 
 int *
-rpcinitappendserver_3_svc(char **argp, struct svc_req *rqstp)
+rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
 {
 	static int  result;
 
 	/*
 	 * insert server code here
 	 */
-    printf("%s\n", *argp);
-
     result = 5;
 
 	return &result;
 }
 
 int *
-rpcappend_3_svc(char *argp, struct svc_req *rqstp)
+rpcappend_1_svc(char *argp, struct svc_req *rqstp)
 {
 	static int  result;
 
 	/*
 	 * insert server code here
 	 */
-
-    result = 2;
+    result = 5;
 
 	return &result;
 }

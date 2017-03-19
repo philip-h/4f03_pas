@@ -14,26 +14,47 @@ extern "C" {
 #endif
 
 
-#define APPENDPROG 0x01310455
-#define APPENDPROGVERS 3
+struct append_init_params {
+	int f;
+	int l;
+	int m;
+	char c0;
+	char c1;
+	char c2;
+	char *host_verify;
+};
+typedef struct append_init_params append_init_params;
+
+#define APPEND_PROG 0x01310455
+#define APPEND_VERS 1
 
 #if defined(__STDC__) || defined(__cplusplus)
 #define RPCInitAppendServer 1
-extern  int * rpcinitappendserver_3(char **, CLIENT *);
-extern  int * rpcinitappendserver_3_svc(char **, struct svc_req *);
+extern  int * rpcinitappendserver_1(append_init_params *, CLIENT *);
+extern  int * rpcinitappendserver_1_svc(append_init_params *, struct svc_req *);
 #define RPCAppend 2
-extern  int * rpcappend_3(char *, CLIENT *);
-extern  int * rpcappend_3_svc(char *, struct svc_req *);
-extern int appendprog_3_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
+extern  int * rpcappend_1(char *, CLIENT *);
+extern  int * rpcappend_1_svc(char *, struct svc_req *);
+extern int append_prog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
 #define RPCInitAppendServer 1
-extern  int * rpcinitappendserver_3();
-extern  int * rpcinitappendserver_3_svc();
+extern  int * rpcinitappendserver_1();
+extern  int * rpcinitappendserver_1_svc();
 #define RPCAppend 2
-extern  int * rpcappend_3();
-extern  int * rpcappend_3_svc();
-extern int appendprog_3_freeresult ();
+extern  int * rpcappend_1();
+extern  int * rpcappend_1_svc();
+extern int append_prog_1_freeresult ();
+#endif /* K&R C */
+
+/* the xdr functions */
+
+#if defined(__STDC__) || defined(__cplusplus)
+extern  bool_t xdr_append_init_params (XDR *, append_init_params*);
+
+#else /* K&R C */
+extern bool_t xdr_append_init_params ();
+
 #endif /* K&R C */
 
 #ifdef __cplusplus

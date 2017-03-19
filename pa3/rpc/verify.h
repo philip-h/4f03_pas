@@ -14,26 +14,49 @@ extern "C" {
 #endif
 
 
-#define VERIFYPROG 0x01327857
-#define VERIFYPROGVERS 1
+struct verify_init_params {
+	int n;
+	int l;
+	int m;
+};
+typedef struct verify_init_params verify_init_params;
+
+#define VERIFY_PROG 0x01327857
+#define VERIFY_VERS 2
 
 #if defined(__STDC__) || defined(__cplusplus)
 #define RPCInitVerifyServer 1
-extern  int * rpcinitverifyserver_1(char **, CLIENT *);
-extern  int * rpcinitverifyserver_1_svc(char **, struct svc_req *);
+extern  int * rpcinitverifyserver_2(verify_init_params *, CLIENT *);
+extern  int * rpcinitverifyserver_2_svc(verify_init_params *, struct svc_req *);
 #define RPCGetSeg 2
-extern  int * rpcgetseg_1(int *, CLIENT *);
-extern  int * rpcgetseg_1_svc(int *, struct svc_req *);
-extern int verifyprog_1_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
+extern  char ** rpcgetseg_2(int *, CLIENT *);
+extern  char ** rpcgetseg_2_svc(int *, struct svc_req *);
+#define RPCGetS 3
+extern  char ** rpcgets_2(void *, CLIENT *);
+extern  char ** rpcgets_2_svc(void *, struct svc_req *);
+extern int verify_prog_2_freeresult (SVCXPRT *, xdrproc_t, caddr_t);
 
 #else /* K&R C */
 #define RPCInitVerifyServer 1
-extern  int * rpcinitverifyserver_1();
-extern  int * rpcinitverifyserver_1_svc();
+extern  int * rpcinitverifyserver_2();
+extern  int * rpcinitverifyserver_2_svc();
 #define RPCGetSeg 2
-extern  int * rpcgetseg_1();
-extern  int * rpcgetseg_1_svc();
-extern int verifyprog_1_freeresult ();
+extern  char ** rpcgetseg_2();
+extern  char ** rpcgetseg_2_svc();
+#define RPCGetS 3
+extern  char ** rpcgets_2();
+extern  char ** rpcgets_2_svc();
+extern int verify_prog_2_freeresult ();
+#endif /* K&R C */
+
+/* the xdr functions */
+
+#if defined(__STDC__) || defined(__cplusplus)
+extern  bool_t xdr_verify_init_params (XDR *, verify_init_params*);
+
+#else /* K&R C */
+extern bool_t xdr_verify_init_params ();
+
 #endif /* K&R C */
 
 #ifdef __cplusplus
