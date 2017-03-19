@@ -7,6 +7,7 @@ Theo Stone (stonet)
 #include <string>
 
 #include <cstdlib>
+#include <cstdio>
 #include <cmath>
 #include <string.h>
 #include <time.h>
