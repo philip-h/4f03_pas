@@ -3,7 +3,7 @@ $FLAGS=-lnsl
 all: client server_append server_verify
 
 client: client.c clnt.c verify_xdr.c append_xdr.c 
-	gcc $^ -o $@ $(FLAGS)
+	gcc $^ -o $@ $(FLAGS) -fopenmp
 
 server_append: append_server.c append_svc.c append_xdr.c
 	gcc $^ -o $@ $(FLAGS)

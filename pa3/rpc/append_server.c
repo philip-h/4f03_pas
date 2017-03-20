@@ -15,6 +15,7 @@ rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
 	 * insert server code here
 	 */
     result = 5;
+    printf("%s\n", argp->host_verify);
 
 	return &result;
 }
@@ -24,10 +25,8 @@ rpcappend_1_svc(char *argp, struct svc_req *rqstp)
 {
 	static int  result;
 
-	/*
-	 * insert server code here
-	 */
-    result = 5;
+    printf("[Remote] appending %c\n", *argp);
+    result = -1;
 
 	return &result;
 }
