@@ -1,9 +1,10 @@
 #include "verify.h"
 
-#include<arpa/inet.h>
-#include<sys/socket.h>
-#include<omp.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <omp.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #define PORT 8989
 
@@ -37,8 +38,6 @@ void* initPacktListener(void *r)
       exit(1);
   }
 
-
-    printf("Waiting for data...");
     fflush(stdout);
 
     //try to receive some data, this is a blocking call
@@ -54,6 +53,7 @@ void* initPacktListener(void *r)
 
     build_str = buf;
 
+    close(s);
 }
 
 int *
@@ -70,8 +70,6 @@ rpcinitverifyserver_2_svc(verify_init_params *argp, struct svc_req *rqstp)
   pthread_create(&threads[0], NULL, initPacktListener, (void *)0);
 
     result = 5;
-
-    printf("AAAAAAAAAAAAAAAA RESULT = 5 !!!!");
 
 	return &result;
 }

@@ -2,6 +2,7 @@
 
 #include<arpa/inet.h>
 #include<sys/socket.h>
+#include <unistd.h>
 
 #define PORT 8989
 
@@ -47,6 +48,8 @@ void sendToVerify()
 			perror("error on sendto()");
 			exit(1);
 	}
+
+	close(s);
 }
 
 int *rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
