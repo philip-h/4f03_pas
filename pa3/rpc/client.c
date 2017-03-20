@@ -19,7 +19,7 @@ Theo Stone (stonet)
 void initAppendServer(char*, char*);
 void initVerifyServer(char*);
 
-int checkArgs(int, int, int, int);
+int checkArgs();
 void *appendToS(void *);
 int verifySegment(char *segment);
    
@@ -68,7 +68,7 @@ int main (int argc, char *argv[])
     host_append = argv[8];
     host_verify = argv[9];
 
-    if (checkArgs(f,n,l,m) != 0) {
+    if (checkArgs() != 0) {
         return -1;
     }
 
@@ -113,7 +113,7 @@ int main (int argc, char *argv[])
   Checks to make sure command line arguments don't break the program!
   Will print and return with an error if there is a problem with the arguments.
 */
-int checkArgs(int f, int n, int l, int m)
+int checkArgs()
 {
     if (f < 0 || f > 3) {
         printf("F must be between 0 and 3\n%s", error);
@@ -256,9 +256,12 @@ void *appendToS(void *r)
 
     /* Get string from verify server to display from master thread */
     int *param = 0;
-    S = rpcgets_2((void*)&param, clnt_verify);
+    // If S is null, this means this thread is the first to call rpc_get_s!
     if (S == (char **)NULL) {
-        clnt_perror (clnt_verify, "call failed");
+        S = rpcgets_2((void*)&param, clnt_verify);
+        if (S == (char **)NULL) {
+            clnt_perror (clnt_verify, "call failed");
+        }
     }
 }
 
