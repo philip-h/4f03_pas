@@ -150,7 +150,7 @@ void initAppendServer(char *host_append, char* host_verify)
     int *initStatus;
     append_init_params append_params;
 
-    clnt_append = clnt_create (host_append, APPEND_PROG, APPEND_VERS, "udp");
+    clnt_append = clnt_create (host_append, APPEND_PROG, APPEND_VERS, "tcp");
     if (clnt_append == NULL) {
 		clnt_pcreateerror (host_append);
 		exit(1);
@@ -179,7 +179,7 @@ void initVerifyServer(char *host_verify)
     int *initStatus;
     verify_init_params verify_params;
 
-	clnt_verify = clnt_create (host_verify, VERIFY_PROG, VERIFY_VERS, "udp");
+	clnt_verify = clnt_create (host_verify, VERIFY_PROG, VERIFY_VERS, "tcp");
     if (clnt_verify == NULL) {
 		clnt_pcreateerror (host_verify);
 		exit(1);
