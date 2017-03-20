@@ -1,5 +1,12 @@
 #include "append.h"
 
+#include<arpa/inet.h>
+#include<sys/socket.h>
+
+#define SERVER "127.0.0.1"
+#define BUFLEN 512
+#define PORT 9999
+
 int f;
 int n;
 int l;
@@ -10,6 +17,37 @@ char c2;
 char *host_verify;
 
 char *build_str;
+
+//Sends the current build_str to the verify server
+void sendToVerify()
+{
+	struct sockaddr_in si_other;
+  int s, i, slen=sizeof(si_other);
+  char buf[BUFLEN];
+
+  if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+  {
+      perror("error on socket bind");
+			exit(1);
+  }
+
+	memset((char *) &si_other, 0, sizeof(si_other));
+	si_other.sin_family = AF_INET;
+	si_other.sin_port = htons(PORT);
+
+	if (inet_aton(SERVER , &si_other.sin_addr) == 0)
+	{
+			perror("inet_aton() failed");
+			exit(1);
+	}
+
+	//send the string
+	if (sendto(s, build_str, strlen(build_str) , 0 , (struct sockaddr *) &si_other, slen)==-1)
+	{
+			perror("error on sendto()");
+			exit(1);
+	}
+}
 
 int *rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
 {
@@ -49,6 +87,9 @@ int *rpcappend_1_svc(char *argp, struct svc_req *rqstp)
             case 3: enforce3(*argp); break;
         }
 		result = 0;
+	}
+	else{
+		sendToVerify();
 	}
     printf("%s\n", build_str);
 
@@ -203,18 +244,18 @@ void enforce1(char c)
                 // Reset the segment and try again
                 build_str[len - lenCurrSegment] = '\0';
             }
-            /* 
-             * If the incomming letter is c0 or c2, make sure 
-             * there are at least 2 spots left. If there are, 
+            /*
+             * If the incomming letter is c0 or c2, make sure
+             * there are at least 2 spots left. If there are,
              * append the letter
              */
             else if (c == c0 || c == c2) {
                 if (l - lenCurrSegment >= 2) {
                     append(c);
                 }
-            /* 
-             * If the incomming letter is c1, make sure 
-             * there are at least 3 spots left. If there are, 
+            /*
+             * If the incomming letter is c1, make sure
+             * there are at least 3 spots left. If there are,
              * append the letter
              */
             } else if(c == c1){
@@ -222,11 +263,11 @@ void enforce1(char c)
                     append(c);
                 }
             }
-        // If the incomming letter is not a property checked letter, add it    
+        // If the incomming letter is not a property checked letter, add it
         } else {
             append(c);
         }
-        
+
     // If the current segment is not empty and the current property is not satisfied
     } else {
         // Add a letter according to it's need
@@ -304,9 +345,9 @@ void enforce2(char c)
                 // Reset the segment and try again
                 build_str[len - lenCurrSegment] = '\0';
             }
-            /* 
-             * If the incomming letter is c0, make sure 
-             * there are at least c1 spots left. If there are, 
+            /*
+             * If the incomming letter is c0, make sure
+             * there are at least c1 spots left. If there are,
              * append the letter
              */
             if (c == c0) {
@@ -314,9 +355,9 @@ void enforce2(char c)
                     append(c);
                 }
             }
-            /* 
-             * If the incomming letter is c1, make sure 
-             * there are at least c0 spots left. If there are, 
+            /*
+             * If the incomming letter is c1, make sure
+             * there are at least c0 spots left. If there are,
              * append the letter
              */
             else if (c == c1) {
@@ -329,7 +370,7 @@ void enforce2(char c)
                 /*Do NOTHING*/
             }
         }
-        // If the incomming letter is not a property checked letter, add it    
+        // If the incomming letter is not a property checked letter, add it
         else {
             append(c);
         }
