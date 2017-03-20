@@ -46,6 +46,7 @@ rpcappend_1_svc(char *argp, struct svc_req *rqstp)
 		build_str[length+1] = '\0';
 		result = 0;
 	}
+    printf("%s\n", build_str);
 
 	return &result;
 }

@@ -1,3 +1,8 @@
+/*
+Contributors: Philip Habib (habibp)
+Theo Stone (stonet)
+*/
+
 #include "append.h"
 #include "verify.h"
 
@@ -12,12 +17,18 @@
 
 /* Function Prototypes */
 void initAppendServer(char*, int, int, int, char, char, char, char*);
+void initVerifyServer(char*, int, int, int);
+
 int checkArgs(int, int, int, int);
 void *appendToS(void *);
+int verifySegment(char *segment);
    
 /* Global Vars */
 CLIENT *clnt_append;
 CLIENT *clnt_verify;
+
+int f, m, n, l;
+char c0, c1, c2;
 
 char *sigma;
 int MILIS = 1000000;
@@ -34,8 +45,6 @@ const char *error = "Useage: ./pa2.x i N L M c0 c1 c2 host_name1 host_name2\n"
 
 int main (int argc, char *argv[])
 {
-    int f, n, l, m;
-    char c0, c1, c2;
     char* host_verify;
     char* host_append;
 
@@ -65,7 +74,7 @@ int main (int argc, char *argv[])
     }
 
     initAppendServer(host_append, f, l, m, c0, c1, c2, host_verify);
-    //initVerifyServer(host_verify, n, l, m);
+    initVerifyServer(host_verify, n, l, m);
 
     /* Seed for random sleep time of the threads */
     srand(time(NULL));
@@ -210,11 +219,35 @@ void initAppendServer(char *host_append, int f, int l, int m, char c0, char c1, 
 	}
 }
 
+/* Initializes the verify server!! */
+void initVerifyServer(char *host_verify, int n, int l, int m)
+{
+    int *initStatus;
+    verify_init_params verify_params;
+
+	clnt_verify = clnt_create (host_verify, VERIFY_PROG, VERIFY_VERS, "udp");
+    if (clnt_verify == NULL) {
+		clnt_pcreateerror (host_verify);
+		exit(1);
+	}
+
+    verify_params.n = n;
+    verify_params.l = l;
+    verify_params.m = m;
+
+    initStatus = rpcinitverifyserver_2(&verify_params, clnt_verify);
+	if (initStatus == (int *) NULL) {
+		clnt_perror (clnt_verify, "call failed");
+	} else {
+        printf("Successfully initialized verify server\n");
+	}
+}
 
 void *appendToS(void *r)
 {
-    int *appendStatus;
     int rank = omp_get_thread_num();
+    int *appendStatus;
+    int localCount = 0;
 
     int randSleep, randSleepNano;
     struct timespec tim, tim2;
@@ -236,10 +269,58 @@ void *appendToS(void *r)
         if (appendStatus == (int *)NULL) {
             clnt_perror (clnt_append, "call failed");
         } else if (*appendStatus == -1) {
+            // S has been completed
             break;
         } else if (*appendStatus == 0) {
             // Success!!
         }
     }
+
+    // Verify segments of S
+
+    char **segToVerify;
+
+    for (int r = rank; r < m; r += n) {
+        segToVerify = rpcgetseg_2(&r, clnt_verify);
+        if (segToVerify == (char **)NULL) {
+            clnt_perror (clnt_verify, "call failed");
+        }
+        
+        localCount += verifySegment(*segToVerify);
+    }
+
+    printf("Thread %d counted %d segments\n", rank, localCount);
+}
+
+int verifySegment(char* segment)
+{
+    int numC0 = 0, numC1 = 0, numC2 = 0;
+    for (int i = 0; i < strlen(segment); i++) {
+        if      (segment[i] == c0) numC0 ++;
+        else if (segment[i] == c1) numC1 ++;
+        else if (segment[i] == c2) numC2 ++;
+    }
+
+    int segVerified = 0;
+
+    if(f == 0) {
+        if((numC0 + numC1) == numC2) {
+            segVerified = 1;
+        }
+    } else if(f == 1) {
+        if((numC0 + 2*numC1) == numC2) {
+            segVerified = 1;
+        }
+    } else if(f == 2) {
+        if((numC0 * numC1) == numC2) {
+            segVerified = 1;
+        }
+    } else if(f == 3) {
+        if((numC0 - numC1) == numC2){
+            segVerified = 1;
+        }
+    }
+
+    return segVerified;
 }
 
