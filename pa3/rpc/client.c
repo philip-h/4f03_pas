@@ -48,9 +48,9 @@ int main (int argc, char *argv[])
     n = atoi(argv[2]);
     l = atoi(argv[3]);
     m = atoi(argv[4]);
-    c0 = argv[5];
-    c1 = argv[6];
-    c2 = argv[7];
+    c0 = *argv[5];
+    c1 = *argv[6];
+    c2 = *argv[7];
     host_append = argv[8];
     host_verify = argv[9];
 
@@ -238,7 +238,7 @@ void *appendToS(void *r)
         } else if (*appendStatus == -1) {
             break;
         } else if (*appendStatus == 0) {
-            printf("[Client] Successfully appended %c to the string!\n", c);
+            // Success!!
         }
     }
 }
