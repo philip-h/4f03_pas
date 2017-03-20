@@ -3,8 +3,6 @@
 #include<arpa/inet.h>
 #include<sys/socket.h>
 
-#define SERVER "127.0.0.1"
-#define BUFLEN 512
 #define PORT 8989
 
 int f;
@@ -23,7 +21,7 @@ void sendToVerify()
 {
 	struct sockaddr_in si_other;
   int s, i, slen=sizeof(si_other);
-  char buf[BUFLEN];
+  char buf[l*m];
 
   if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
   {
@@ -35,7 +33,9 @@ void sendToVerify()
 	si_other.sin_family = AF_INET;
 	si_other.sin_port = htons(PORT);
 
-	if (inet_aton(SERVER , &si_other.sin_addr) == 0)
+	printf("HOST: %s\n", host_verify);
+
+	if (inet_aton(host_verify , &si_other.sin_addr) == 0)
 	{
 			perror("inet_aton() failed");
 			exit(1);
@@ -54,13 +54,18 @@ int *rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
 	static int  result;
 
 	f = argp->f;
-    n = argp->n;
+  n = argp->n;
 	l = argp->l;
 	m = argp->m;
 	c0 = argp->c0;
 	c1 = argp->c1;
 	c2 = argp->c2;
-	host_verify = argp->host_verify;
+	host_verify = (char*)malloc(sizeof(argp->host_verify)+1);
+	memcpy(host_verify, argp->host_verify, sizeof(argp->host_verify)+1);
+	host_verify[sizeof(host_verify)+1] = '\0';
+
+	printf("%s\n", argp->host_verify);
+	printf("%s\n", host_verify);
 
     build_str = (char *)malloc(sizeof(char) * m * l);
     build_str[0] = '\0';
@@ -90,6 +95,7 @@ int *rpcappend_1_svc(char *argp, struct svc_req *rqstp)
 	}
 	else{
 		sendToVerify();
+		printf("Send to verify and continue");
 	}
     printf("%s\n", build_str);
 

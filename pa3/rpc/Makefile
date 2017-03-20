@@ -4,7 +4,7 @@ $FLAGS=-lnsl
 all: client server_append server_verify
 
 run : client
-	./client 0 3 4 3 a b c localhost localhost
+	./client 0 3 4 3 a b c 127.0.0.1 127.0.0.1
 
 client: client.c clnt.c verify_xdr.c append_xdr.c
 	gcc $^ -o $@ $(FLAGS) -fopenmp

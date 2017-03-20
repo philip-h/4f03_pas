@@ -5,10 +5,9 @@
 #include<omp.h>
 #include <pthread.h>
 
-#define BUFLEN 512
 #define PORT 8989
 
-char *build_str = "aabcccabbcccabcabc";
+char *build_str;
 int n, l, m;
 
 void* initPacktListener(void *r)
@@ -16,7 +15,7 @@ void* initPacktListener(void *r)
   struct sockaddr_in si_me, si_other;
 
   int s, i, slen = sizeof(si_other) , recv_len;
-  char buf[BUFLEN];
+  char buf[l*m];
 
   //Attempt to create a UDP socket
   if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
@@ -43,7 +42,7 @@ void* initPacktListener(void *r)
     fflush(stdout);
 
     //try to receive some data, this is a blocking call
-    if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1)
+    if ((recv_len = recvfrom(s, buf, (l*m), 0, (struct sockaddr *) &si_other, &slen)) == -1)
     {
         perror("recvfrom()");
         exit(1);
@@ -52,7 +51,9 @@ void* initPacktListener(void *r)
     //print details of the client/peer and the data received
     printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
     printf("Data: %s\n" , buf);
-  
+
+    build_str = buf;
+
 }
 
 int *
