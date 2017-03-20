@@ -33,7 +33,8 @@ rpcgetseg_2_svc(int *argp, struct svc_req *rqstp)
         memcpy(result, &build_str[(*argp)*l], l);
         result[l] = '\0';
     } else {
-        printf("Thread rank too high\n");
+        result[0] = '-';
+        result[1] = '\0';
     } 
 
 	return &result;

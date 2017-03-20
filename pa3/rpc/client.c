@@ -27,6 +27,11 @@ int verifySegment(char *segment);
 CLIENT *clnt_append;
 CLIENT *clnt_verify;
 
+omp_lock_t countLock;
+
+char **S;
+int totalCount = 0;
+
 int f, m, n, l;
 char c0, c1, c2;
 
@@ -67,7 +72,7 @@ int main (int argc, char *argv[])
         return -1;
     }
 
-    // Init our alphabet from a- [c-g]
+    /* Init our alphabet from a- [c-g] */
     sigma = (char*) malloc(sizeof(char)*n);
     for (size_t i = 0; i < n; i++) {
         sigma[i] = (char)(i + (int)'a');
@@ -81,79 +86,27 @@ int main (int argc, char *argv[])
 
     printf("Starting Threads ...\n");
 
+    /* Spin up n threads */
 #   pragma omp parallel num_threads(n)
     {
         appendToS(0);
     }
 
+    /* Free memory of sigma */
     free(sigma);
 
+    FILE *f = fopen("out.txt", "w");
+    if (f == NULL) {
+        printf("Error opening file\n");
+        return -1;
+    }
+
+    fprintf(f, "%s\n%d\n", *S, totalCount);
+    fclose(f);
+
+    printf("%s\n%d\n", *S, totalCount);
+
     return 0;
-}
-
-void verify_prog_2(char *host)
-{
-	CLIENT *clnt;
-	int  *result_1;
-	verify_init_params  rpcinitverifyserver_2_arg;
-	char * *result_2;
-	int  rpcgetseg_2_arg;
-	char * *result_3;
-	char *rpcgets_2_arg;
-
-#ifndef	DEBUG
-	clnt = clnt_create (host, VERIFY_PROG, VERIFY_VERS, "udp");
-	if (clnt == NULL) {
-		clnt_pcreateerror (host);
-		exit (1);
-	}
-#endif	/* DEBUG */
-
-	result_1 = rpcinitverifyserver_2(&rpcinitverifyserver_2_arg, clnt);
-	if (result_1 == (int *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_2 = rpcgetseg_2(&rpcgetseg_2_arg, clnt);
-	if (result_2 == (char **) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_3 = rpcgets_2((void*)&rpcgets_2_arg, clnt);
-	if (result_3 == (char **) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-#ifndef	DEBUG
-	clnt_destroy (clnt);
-#endif	 /* DEBUG */
-}
-
-void
-append_prog_1(char *host)
-{
-	CLIENT *clnt;
-	int  *result_1;
-	append_init_params  rpcinitappendserver_1_arg;
-	int  *result_2;
-	char  rpcappend_1_arg;
-
-#ifndef	DEBUG
-	clnt = clnt_create (host, APPEND_PROG, APPEND_VERS, "udp");
-	if (clnt == NULL) {
-		clnt_pcreateerror (host);
-		exit (1);
-	}
-#endif	/* DEBUG */
-
-	result_1 = rpcinitappendserver_1(&rpcinitappendserver_1_arg, clnt);
-	if (result_1 == (int *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-	result_2 = rpcappend_1(&rpcappend_1_arg, clnt);
-	if (result_2 == (int *) NULL) {
-		clnt_perror (clnt, "call failed");
-	}
-#ifndef	DEBUG
-	clnt_destroy (clnt);
-#endif	 /* DEBUG */
 }
 
 /*
@@ -243,6 +196,9 @@ void initVerifyServer(char *host_verify, int n, int l, int m)
 	}
 }
 
+/* Method that is spun off into threads. 
+ * Appends letters to a string on the server concurrently 
+ */
 void *appendToS(void *r)
 {
     int rank = omp_get_thread_num();
@@ -276,8 +232,7 @@ void *appendToS(void *r)
         }
     }
 
-    // Verify segments of S
-
+    /* Verify segments of S */
     char **segToVerify;
 
     for (int r = rank; r < m; r += n) {
@@ -285,13 +240,29 @@ void *appendToS(void *r)
         if (segToVerify == (char **)NULL) {
             clnt_perror (clnt_verify, "call failed");
         }
-        
+        // This should never actually run!
+        else if (strcmp(*segToVerify, "-") == 0) {
+            break;
+        } 
+
         localCount += verifySegment(*segToVerify);
     }
 
-    printf("Thread %d counted %d segments\n", rank, localCount);
+    /* Once completed, summate local count to global count */
+    omp_set_lock(&countLock);
+    totalCount += localCount;
+    omp_unset_lock(&countLock);
+
+    /* Get string from verify server to display from master thread */
+    int *param = 0;
+    S = rpcgets_2((void*)&param, clnt_verify);
+    if (S == (char **)NULL) {
+        clnt_perror (clnt_verify, "call failed");
+    }
 }
 
+/* Return 1 if the segment is verified
+ * Return 0 otherwise  */
 int verifySegment(char* segment)
 {
     int numC0 = 0, numC1 = 0, numC2 = 0;
