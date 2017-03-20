@@ -5,7 +5,7 @@
 
 #define SERVER "127.0.0.1"
 #define BUFLEN 512
-#define PORT 9999
+#define PORT 8989
 
 int f;
 int n;

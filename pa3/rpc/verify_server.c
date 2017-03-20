@@ -1,17 +1,17 @@
 #include "verify.h"
 
-#include<unistd.h>
 #include<arpa/inet.h>
 #include<sys/socket.h>
 #include<omp.h>
+#include <pthread.h>
 
 #define BUFLEN 512
-#define PORT 9999
+#define PORT 8989
 
 char *build_str = "aabcccabbcccabcabc";
 int n, l, m;
 
-void initPacktListener()
+void* initPacktListener(void *r)
 {
   struct sockaddr_in si_me, si_other;
 
@@ -38,6 +38,7 @@ void initPacktListener()
       exit(1);
   }
 
+
     printf("Waiting for data...");
     fflush(stdout);
 
@@ -51,9 +52,7 @@ void initPacktListener()
     //print details of the client/peer and the data received
     printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
     printf("Data: %s\n" , buf);
-
-    close(s);
-
+  
 }
 
 int *
@@ -65,11 +64,9 @@ rpcinitverifyserver_2_svc(verify_init_params *argp, struct svc_req *rqstp)
 
 	static int  result;
 
-  #pragma omp parallel
-  {
-    initPacktListener();
-  }
+  pthread_t* threads = (pthread_t*) malloc(1*sizeof(pthread_t));
 
+  pthread_create(&threads[0], NULL, initPacktListener, (void *)0);
 
     result = 5;
 
