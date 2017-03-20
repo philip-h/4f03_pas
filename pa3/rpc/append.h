@@ -7,6 +7,7 @@
 #define _APPEND_H_RPCGEN
 
 #include <rpc/rpc.h>
+#include "enforce.h"
 
 
 #ifdef __cplusplus
@@ -16,6 +17,7 @@ extern "C" {
 
 struct append_init_params {
 	int f;
+	int n;
 	int l;
 	int m;
 	char c0;

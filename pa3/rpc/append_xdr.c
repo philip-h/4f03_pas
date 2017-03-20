@@ -12,9 +12,11 @@ xdr_append_init_params (XDR *xdrs, append_init_params *objp)
 
 
 	if (xdrs->x_op == XDR_ENCODE) {
-		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->f))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->n))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->l))
 				 return FALSE;
@@ -23,6 +25,7 @@ xdr_append_init_params (XDR *xdrs, append_init_params *objp)
 
 		} else {
 		IXDR_PUT_LONG(buf, objp->f);
+		IXDR_PUT_LONG(buf, objp->n);
 		IXDR_PUT_LONG(buf, objp->l);
 		IXDR_PUT_LONG(buf, objp->m);
 		}
@@ -36,9 +39,11 @@ xdr_append_init_params (XDR *xdrs, append_init_params *objp)
 			 return FALSE;
 		return TRUE;
 	} else if (xdrs->x_op == XDR_DECODE) {
-		buf = XDR_INLINE (xdrs, 3 * BYTES_PER_XDR_UNIT);
+		buf = XDR_INLINE (xdrs, 4 * BYTES_PER_XDR_UNIT);
 		if (buf == NULL) {
 			 if (!xdr_int (xdrs, &objp->f))
+				 return FALSE;
+			 if (!xdr_int (xdrs, &objp->n))
 				 return FALSE;
 			 if (!xdr_int (xdrs, &objp->l))
 				 return FALSE;
@@ -47,6 +52,7 @@ xdr_append_init_params (XDR *xdrs, append_init_params *objp)
 
 		} else {
 		objp->f = IXDR_GET_LONG(buf);
+		objp->n = IXDR_GET_LONG(buf);
 		objp->l = IXDR_GET_LONG(buf);
 		objp->m = IXDR_GET_LONG(buf);
 		}
@@ -62,6 +68,8 @@ xdr_append_init_params (XDR *xdrs, append_init_params *objp)
 	}
 
 	 if (!xdr_int (xdrs, &objp->f))
+		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->n))
 		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->l))
 		 return FALSE;

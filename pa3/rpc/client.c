@@ -16,8 +16,8 @@ Theo Stone (stonet)
 #include <omp.h>
 
 /* Function Prototypes */
-void initAppendServer(char*, int, int, int, char, char, char, char*);
-void initVerifyServer(char*, int, int, int);
+void initAppendServer(char*, char*);
+void initVerifyServer(char*);
 
 int checkArgs(int, int, int, int);
 void *appendToS(void *);
@@ -78,8 +78,8 @@ int main (int argc, char *argv[])
         sigma[i] = (char)(i + (int)'a');
     }
 
-    initAppendServer(host_append, f, l, m, c0, c1, c2, host_verify);
-    initVerifyServer(host_verify, n, l, m);
+    initAppendServer(host_append, host_verify);
+    initVerifyServer(host_verify);
 
     /* Seed for random sleep time of the threads */
     srand(time(NULL));
@@ -145,7 +145,7 @@ int checkArgs(int f, int n, int l, int m)
 }
 
 /* Initializes the append server!! */
-void initAppendServer(char *host_append, int f, int l, int m, char c0, char c1, char c2, char* host_verify)
+void initAppendServer(char *host_append, char* host_verify)
 {
     int *initStatus;
     append_init_params append_params;
@@ -157,6 +157,7 @@ void initAppendServer(char *host_append, int f, int l, int m, char c0, char c1, 
 	}
 
     append_params.f = f;
+    append_params.n = n;
     append_params.l = l;
     append_params.m = m;
     append_params.c0 = c0;
@@ -173,7 +174,7 @@ void initAppendServer(char *host_append, int f, int l, int m, char c0, char c1, 
 }
 
 /* Initializes the verify server!! */
-void initVerifyServer(char *host_verify, int n, int l, int m)
+void initVerifyServer(char *host_verify)
 {
     int *initStatus;
     verify_init_params verify_params;

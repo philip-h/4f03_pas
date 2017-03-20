@@ -42,10 +42,11 @@ rpcappend_1_svc(char *argp, struct svc_req *rqstp)
 
 	if(length < m*l)
 	{
-		build_str[length] = *argp;
-		build_str[length+1] = '\0';
+        build_str[length] = *argp;
+        build_str[length+1] = '\0';
 		result = 0;
 	}
 
 	return &result;
 }
+

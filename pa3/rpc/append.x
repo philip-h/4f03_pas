@@ -1,5 +1,6 @@
 struct append_init_params {
     int f;
+    int n;
     int l;
     int m;
     char c0;
