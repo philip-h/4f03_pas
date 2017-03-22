@@ -1,18 +1,17 @@
 #include "append.h"
 
 #include<arpa/inet.h>
+#include<netinet/in.h>
 #include<sys/socket.h>
+
 #include <unistd.h>
+#include <string.h>
 
 #define PORT 8989
 
-int f;
-int n;
-int l;
-int m;
-char c0;
-char c1;
-char c2;
+int f, n, l, m;
+char c0, c1, c2;
+
 char *host_verify;
 
 char *build_str;
@@ -20,92 +19,87 @@ char *build_str;
 //Sends the current build_str to the verify server
 void sendToVerify()
 {
-	struct sockaddr_in si_other;
-  int s, i, slen=sizeof(si_other);
-  char buf[l*m];
+    struct sockaddr_in si_other;
+    int s, i, slen=sizeof(si_other);
+    char buf[l*m];
 
-  if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
-  {
-      perror("error on socket bind");
-			exit(1);
-  }
+    if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1)
+    {
+        perror("error on socket bind");
+        exit(1);
+    }
 
-	memset((char *) &si_other, 0, sizeof(si_other));
-	si_other.sin_family = AF_INET;
-	si_other.sin_port = htons(PORT);
+    memset((char *) &si_other, 0, sizeof(si_other));
+    si_other.sin_family = AF_INET;
+    si_other.sin_port = htons(PORT);
 
-	printf("HOST: %s\n", host_verify);
+    if (inet_aton(host_verify , &si_other.sin_addr) == 0)
+    {
+        perror("inet_aton() failed");
+        exit(1);
+    }
 
-	if (inet_aton(host_verify , &si_other.sin_addr) == 0)
-	{
-			perror("inet_aton() failed");
-			exit(1);
-	}
+    //send the string
+    if (sendto(s, build_str, strlen(build_str) , 0 , (struct sockaddr *) &si_other, slen)==-1)
+    {
+        perror("error on sendto()");
+        exit(1);
+    }
 
-	//send the string
-	if (sendto(s, build_str, strlen(build_str) , 0 , (struct sockaddr *) &si_other, slen)==-1)
-	{
-			perror("error on sendto()");
-			exit(1);
-	}
-
-	close(s);
+    close(s);
 }
 
 int *rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
 {
-	static int  result;
+    static int  result;
 
-	f = argp->f;
-  n = argp->n;
-	l = argp->l;
-	m = argp->m;
-	c0 = argp->c0;
-	c1 = argp->c1;
-	c2 = argp->c2;
+    f = argp->f;
+    n = argp->n;
+    l = argp->l;
+    m = argp->m;
+    c0 = argp->c0;
+    c1 = argp->c1;
+    c2 = argp->c2;
 
-	int length = strlen(argp->host_verify);
+    int length = strlen(argp->host_verify);
 
-	host_verify = (char*)malloc(sizeof(char) * length);
-	memcpy(host_verify, argp->host_verify, sizeof(char) * length);
-	host_verify[length] = '\0';
-
-	printf("%s\n", argp->host_verify);
-	printf("%s\n", host_verify);
+    host_verify = (char*)malloc(sizeof(char) * length);
+    memcpy(host_verify, argp->host_verify, sizeof(char) * length);
+    host_verify[length] = '\0';
 
     build_str = (char *)malloc(sizeof(char) * m * l);
     build_str[0] = '\0';
 
-	result = 1;
+    result = 1;
 
-	return &result;
+    return &result;
 }
 
 int *rpcappend_1_svc(char *argp, struct svc_req *rqstp)
 {
-	static int  result;
+    static int  result;
 
-	result = -1;
+    result = -1;
 
     int length = strlen(build_str);
 
-	if(length < m*l)
-	{
+    if(length < m*l)
+    {
         switch(f) {
             case 0: enforce0(*argp); break;
             case 1: enforce1(*argp); break;
             case 2: enforce2(*argp); break;
             case 3: enforce3(*argp); break;
         }
-		result = 0;
-	}
-	else{
-		sendToVerify();
-		printf("Send to verify and continue");
-	}
-    printf("%s\n", build_str);
+        result = 0;
+        printf("%s\n", build_str);
+    }
+    else{
+        sendToVerify();
+        printf("Sending to %s to server_verify and continue\n", build_str);
+    }
 
-	return &result;
+    return &result;
 }
 
 void append(char c)
@@ -160,7 +154,7 @@ void enforce0(char c)
             append(c);
         }
 
-    // If the current segment is not empty and the property is satisfied
+        // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         // If the current segment does not have enough room left
         if (l - lenCurrSegment == 1) {
@@ -168,11 +162,11 @@ void enforce0(char c)
             if (c != c0 && c != c1 && c != c2) {
                 append(c);
             }
-        // Otherwise, add a letter!!
+            // Otherwise, add a letter!!
         } else {
             append(c);
         }
-    // If the current segment is not empty and the current property is not satisfied
+        // If the current segment is not empty and the current property is not satisfied
     } else {
         // Add a letter according to its need
         if (c == c0 && numC0Needed > 0) {
@@ -247,7 +241,7 @@ void enforce1(char c)
             append(c);
         }
 
-    // If the current segment is not empty and the property is satisfied
+        // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         // If the incomming letter is a property checked letter
         if (c == c0 || c == c2 || c == c1) {
@@ -265,22 +259,22 @@ void enforce1(char c)
                 if (l - lenCurrSegment >= 2) {
                     append(c);
                 }
-            /*
-             * If the incomming letter is c1, make sure
-             * there are at least 3 spots left. If there are,
-             * append the letter
-             */
+                /*
+                 * If the incomming letter is c1, make sure
+                 * there are at least 3 spots left. If there are,
+                 * append the letter
+                 */
             } else if(c == c1){
                 if (l - lenCurrSegment >= 3) {
                     append(c);
                 }
             }
-        // If the incomming letter is not a property checked letter, add it
+            // If the incomming letter is not a property checked letter, add it
         } else {
             append(c);
         }
 
-    // If the current segment is not empty and the current property is not satisfied
+        // If the current segment is not empty and the current property is not satisfied
     } else {
         // Add a letter according to it's need
         if (c == c0 && numC0Needed > 0) {
@@ -348,7 +342,7 @@ void enforce2(char c)
             append(c);
         }
 
-    // If the current segment is not empty and the property is satisfied
+        // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         // If the incomming letter is a property checked letter
         if (c == c0 || c == c1 || c == c2) {
@@ -386,7 +380,7 @@ void enforce2(char c)
         else {
             append(c);
         }
-    // If the current segment is not empty and the current property is not satisfied
+        // If the current segment is not empty and the current property is not satisfied
     } else {
         // Add a letter according to it's need
         if (c == c0 && numC0Needed > 0) {
@@ -444,7 +438,7 @@ void enforce3(char c)
             append(c);
         }
 
-    // If the current segment is not empty and the property is satisfied
+        // If the current segment is not empty and the property is satisfied
     } else if (numC0Needed == 0 && numC1Needed == 0 && numC2Needed == 0) {
         // If the current segment does not have enough room left
         if (l - lenCurrSegment == 1) {
@@ -452,11 +446,11 @@ void enforce3(char c)
             if (c != c0 && c != c1 && c != c2) {
                 append(c);
             }
-        // Otherwise, add a letter!!
+            // Otherwise, add a letter!!
         } else {
             append(c);
         }
-    // If the current segment is not empty and the current property is not satisfied
+        // If the current segment is not empty and the current property is not satisfied
     } else {
         // Add a letter according to its need
         if (c == c0 && numC0Needed > 0) {

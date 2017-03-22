@@ -1,10 +1,12 @@
 #include "verify.h"
 
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <omp.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
 #define PORT 8989
 
