@@ -63,9 +63,12 @@ int *rpcinitappendserver_1_svc(append_init_params *argp, struct svc_req *rqstp)
 	c0 = argp->c0;
 	c1 = argp->c1;
 	c2 = argp->c2;
-	host_verify = (char*)malloc(sizeof(argp->host_verify)+1);
-	memcpy(host_verify, argp->host_verify, sizeof(argp->host_verify)+1);
-	host_verify[sizeof(host_verify)+1] = '\0';
+
+	int length = strlen(argp->host_verify);
+
+	host_verify = (char*)malloc(sizeof(char) * length);
+	memcpy(host_verify, argp->host_verify, sizeof(char) * length);
+	host_verify[length] = '\0';
 
 	printf("%s\n", argp->host_verify);
 	printf("%s\n", host_verify);
