@@ -34,3 +34,5 @@
 
 # Req Files
 *.pdf
+
+.remote-sync.json
