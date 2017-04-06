@@ -1,56 +1,91 @@
-// #include <mpi.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ppmFile.h"
 
-int radius;
-char* inputFileName;
-char* outputFileName;
+/* Globals */
+const int MAX_STRING = 100;
+const int RED = 0;
+const int GREEN = 1;
+const int BLUE = 2;
 
-int main(int argc, char** argv)
-{
-  //Assign variables from arguments
-  if(argc != 4)
-  {
-    printf("%s\n", "Please input three arguments!");
-    return -1;
-  }
+const char usage [] = "./pa4.x r <inputFilename>.ppm <outputFilename>.ppm\n"
+      "where:\n"
+      "r is the bulrr radians in pixels\n"
+      "<inputFilename>.ppm is the name of the file to blurr\n"
+      "<outputFilename>.ppm is the name of the file to save the blurred image\n";
 
-  radius = atoi(argv[1]);
-
-  inputFileName = malloc(sizeof(char) * strlen(argv[2]));
-  memcpy(inputFileName, argv[2], sizeof(char) * strlen(argv[2]));
-
-  outputFileName = malloc(sizeof(char) * strlen(argv[3]));
-  memcpy(outputFileName, argv[3], sizeof(char) * strlen(argv[3]));
-
-  printf("You gave the input: \n\tradius = %d\n\tInput = %s\n\tOutput = %s\n", radius, inputFileName, outputFileName);
-
+int main(int argc, char** argv) {
   // Initialize the MPI environment
-  // MPI_Init(NULL, NULL);
-
+  MPI_Init(NULL, NULL);
+  
   // Get the number of processes
   int num_p;
-  // MPI_Comm_size(MPI_COMM_WORLD, &num_p);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_p);
 
   // Get the rank of the process
   int rank;
-  // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  // Finalize the MPI environment.
-  // MPI_Finalize();
+  int radius, width, height;
+  int numRows, numLeft;
+  int sendCounts[n_p];
+  int displ[n_p];
+  char fileIn[MAX_STRING];
+  char fileOut[MAX_STRING];
+  Image* imgIn, imgOut;
 
-  const int RED = 0;
-  const int GREEN = 1;
-  const int BLUE = 2;
+  if (rank == 0) 
+  {
 
-  Image* imgIn = ImageRead(inputFileName);
-  int width = ImageWidth(imgIn);
-  int height = ImageHeight(imgIn);
+    // Remove the filename from the argv list
+    argv ++;
+    argc --;
+    
+    if (argc < 3) {
+        fprintf(stderr, "Invalid number of arguments. Usage:\n%s", usage);
+        return 1;
+    }
 
-  Image* imgOut = ImageCreate(width, height);
+    /* Init of variables */
+    radius = atoi(argv[0]);
+    fileIn = argv[1];
+    fileOut = argv[2];
 
+    imgIn = ImageRead(fileIn);
+    width = ImageWidth(imgIn);
+    height = ImageHeight(imgIn);
+ 
+    // Create the sub array to send to each process
+    numRows = (int)(height / n_p);
+    numLeft = (int)(height % n_p);
+
+    for (int i = 0; i < n_p; i++)
+    {
+      if (i == 0) 
+      {
+        sendCounts[n_p] = numRows + radius;
+        displ[n_p] = 0;
+      } else if (i == n_p - 1)
+      { 
+        sendCounts[n_p] = numRows + numLeft + radius;
+        displ[n_p] = numRows + displ[n_p - 1];
+      } else
+      {
+        sendCounts[n_p] = numRows + 2*radius;
+        displ[n_p] = numRows + displ[n_p - 1];
+      }
+    }
+  }
+  unsigned char *subData;
+
+
+
+  
+  // Take out name of program from argv list
+  
+/*
   for(int y = 0; y < height; y++)
   {
     for(int x = 0; x < width; x++)
@@ -86,7 +121,10 @@ int main(int argc, char** argv)
     }
   }
 
-  ImageWrite(imgOut, outputFileName);
+  ImageWrite(imgOut, fileOut);
+*/
+  // Finalize the MPI environment.
+  MPI_Finalize();
 
   return 0;
 }
