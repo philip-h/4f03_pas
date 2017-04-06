@@ -18,8 +18,8 @@ const char usage [] = "./pa4.x r <inputFilename>.ppm <outputFilename>.ppm\n"
 
 int main(int argc, char** argv) {
   // Initialize the MPI environment
-  MPI_Init(NULL, NULL);
-  
+  MPI_Init(&argc, &argv);
+
   // Get the number of processes
   int num_p;
   MPI_Comm_size(MPI_COMM_WORLD, &num_p);
@@ -30,61 +30,76 @@ int main(int argc, char** argv) {
 
   int radius, width, height;
   int numRows, numLeft;
-  int sendCounts[n_p];
-  int displ[n_p];
-  char fileIn[MAX_STRING];
-  char fileOut[MAX_STRING];
+  int sendCounts[num_p];
+  int displ[num_p];
+  char* fileIn;
+  char* fileOut;
   Image* imgIn, imgOut;
 
-  if (rank == 0) 
+
+  // Remove the filename from the argv list
+  argv ++;
+  argc --;
+
+  if (argc < 3) {
+      fprintf(stderr, "Invalid number of arguments. Usage:\n%s", usage);
+      return 1;
+  }
+
+  /* Init of variables */
+  radius = atoi(argv[0]);
+
+  fileIn = malloc(sizeof(char) * strlen(argv[2]));
+  memcpy(fileIn, argv[2], sizeof(char) * strlen(argv[2]));
+
+  fileOut = malloc(sizeof(char) * strlen(argv[3]));
+  memcpy(fileOut, argv[3], sizeof(char) * strlen(argv[3]));
+
+
+  if (rank == 0)
   {
-
-    // Remove the filename from the argv list
-    argv ++;
-    argc --;
-    
-    if (argc < 3) {
-        fprintf(stderr, "Invalid number of arguments. Usage:\n%s", usage);
-        return 1;
-    }
-
-    /* Init of variables */
-    radius = atoi(argv[0]);
-    fileIn = argv[1];
-    fileOut = argv[2];
-
     imgIn = ImageRead(fileIn);
     width = ImageWidth(imgIn);
     height = ImageHeight(imgIn);
- 
-    // Create the sub array to send to each process
-    numRows = (int)(height / n_p);
-    numLeft = (int)(height % n_p);
 
-    for (int i = 0; i < n_p; i++)
+    // Create the sub array to send to each process
+    numRows = (int)(height / num_p);
+    numLeft = (int)(height % num_p);
+
+    for (int i = 0; i < num_p; i++)
     {
-      if (i == 0) 
+      if (i == 0)
       {
-        sendCounts[n_p] = numRows + radius;
-        displ[n_p] = 0;
-      } else if (i == n_p - 1)
-      { 
-        sendCounts[n_p] = numRows + numLeft + radius;
-        displ[n_p] = numRows + displ[n_p - 1];
+        sendCounts[num_p] = (numRows + radius)*width*3;
+        displ[num_p] = 0;
+      } else if (i == num_p - 1)
+      {
+        sendCounts[num_p] = (numRows + numLeft + radius)*width*3;
+        displ[num_p] = (numRows + displ[num_p - 1])*width*3;
       } else
       {
-        sendCounts[n_p] = numRows + 2*radius;
-        displ[n_p] = numRows + displ[n_p - 1];
+        sendCounts[num_p] = (numRows + 2*radius)*width*3;
+        displ[num_p] = (numRows + displ[num_p - 1])*width*3;
       }
     }
   }
-  unsigned char *subData;
+  unsigned char *subData = (char*)malloc(sizeof(char) * sendCounts[rank]);
+
+  MPI_Scatterv(imgIn->data, sendCounts, displ, MPI_UNSIGNED_CHAR, &subData, 6000, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+
+  printf("%d\n", rank);
+
+  for(int i = 0; i < sendCounts[rank]; i++)
+  {
+    printf("%c\t", subData[i]);
+  }
+
+  printf("\n");
 
 
 
-  
   // Take out name of program from argv list
-  
+
 /*
   for(int y = 0; y < height; y++)
   {
@@ -125,6 +140,9 @@ int main(int argc, char** argv) {
 */
   // Finalize the MPI environment.
   MPI_Finalize();
+
+  free(sendCounts);
+  free(displ);
 
   return 0;
 }
