@@ -1,8 +1,32 @@
 // #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "ppmFile.h"
 
-int main(int argc, char** argv) {
+int radius;
+char* inputFileName;
+char* outputFileName;
+
+int main(int argc, char** argv)
+{
+  //Assign variables from arguments
+  if(argc != 4)
+  {
+    printf("%s\n", "Please input three arguments!");
+    return -1;
+  }
+
+  radius = atoi(argv[1]);
+
+  inputFileName = malloc(sizeof(char) * strlen(argv[2]));
+  memcpy(inputFileName, argv[2], sizeof(char) * strlen(argv[2]));
+
+  outputFileName = malloc(sizeof(char) * strlen(argv[3]));
+  memcpy(outputFileName, argv[3], sizeof(char) * strlen(argv[3]));
+
+  printf("You gave the input: \n\tradius = %d\n\tInput = %s\n\tOutput = %s\n", radius, inputFileName, outputFileName);
+
   // Initialize the MPI environment
   // MPI_Init(NULL, NULL);
 
@@ -21,9 +45,7 @@ int main(int argc, char** argv) {
   const int GREEN = 1;
   const int BLUE = 2;
 
-  int radius = 1;
-
-  Image* imgIn = ImageRead("fox.ppm");
+  Image* imgIn = ImageRead(inputFileName);
   int width = ImageWidth(imgIn);
   int height = ImageHeight(imgIn);
 
@@ -64,7 +86,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  ImageWrite(imgOut, "out.ppm");
+  ImageWrite(imgOut, outputFileName);
 
   return 0;
 }
