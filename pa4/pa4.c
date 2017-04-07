@@ -14,7 +14,7 @@ const char usage [] = "./pa4.x r <inputFilename>.ppm <outputFilename>.ppm\n"
       "where:\n"
       "r is the bulrr radians in pixels\n"
       "<inputFilename>.ppm is the name of the file to blurr\n"
-      "<outputFilename>.ppm is the name of the file to save the blurred image\n";
+      "<outputFilename>.ppm is the name of the file to save the blurred image\n\n\n";
 
 int main(int argc, char** argv) {
   // Initialize the MPI environment
@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  /* Variable Declaration */
   int radius, width, height;
   int numRows, numLeft;
   int* sendCounts;
@@ -37,7 +36,8 @@ int main(int argc, char** argv) {
   char* fileOut;
   Image* imgIn, imgOut;
 
-  /* Get Variables from CLArgs */
+
+  // Remove the filename from the argv list
   argv ++;
   argc --;
 
@@ -49,14 +49,19 @@ int main(int argc, char** argv) {
   /* Init of variables */
   radius = atoi(argv[0]);
 
+  if (radius == 0) {
+    fprintf(stderr, "No need to blur - radius is 0\n\n\n");
+    return 1;
+  }
+
   imgIn = ImageRead(argv[1]);
   width = ImageWidth(imgIn);
   height = ImageHeight(imgIn);
 
-  /* Create arrays for ScatterV */
   sendCounts = (int*)malloc(sizeof(int) * num_p);
   displ = (int*)malloc(sizeof(int) * num_p);
 
+  // Create the sub array to send to each process
   numRows = (int)(height / num_p);
   numLeft = (int)(height % num_p);
 
@@ -69,11 +74,11 @@ int main(int argc, char** argv) {
     } else if (i == num_p-1)
     {
       sendCounts[i] = (numRows + numLeft + radius)*width*3;
-      displ[i] = displ[i-1] + numRows*width*3;
+      displ[i] = (sendCounts[i-1] - (3*width)) + displ[i-1] - (radius*3*width);
     } else
     {
       sendCounts[i] = (numRows + 2*radius)*width*3;
-      displ[i] = displ[i-1] + numRows*width*3;
+      displ[i] = (sendCounts[i-1] - (3*width)) + displ[i-1] - (radius*3*width);
     } 
   }
 
@@ -99,11 +104,17 @@ int main(int argc, char** argv) {
   MPI_Scatterv(imgIn->data, sendCounts, displ, MPI_UNSIGNED_CHAR, subData, sendCounts[rank], MPI_UNSIGNED_CHAR, 0,  MPI_COMM_WORLD);
 
   printf("%d\n", rank);
+  printf("send[%d] = %d\n", rank, sendCounts[rank]);
+  printf("displ[%d] = %d\n", rank, displ[rank]);
+  printf("\n");
 
   for(int i = 0; i < sendCounts[rank]; i++)
   {
     printf("%d ", subData[i]);
   }
+
+  printf("\n");
+  printf("\n");
 
 
 /*
@@ -147,9 +158,8 @@ int main(int argc, char** argv) {
   // Finalize the MPI environment.
   MPI_Finalize();
 
-  free(subData);
-  free(sendCounts);
-  free(displ);
+//  free(sendCounts);
+//  free(displ);
 
   return 0;
 }
