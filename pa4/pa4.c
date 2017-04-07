@@ -28,16 +28,16 @@ int main(int argc, char** argv) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  /* Variable Declaration */
   int radius, width, height;
   int numRows, numLeft;
-  int sendCounts[num_p];
-  int displ[num_p];
+  int* sendCounts;
+  int* displ;
   char* fileIn;
   char* fileOut;
   Image* imgIn, imgOut;
 
-
-  // Remove the filename from the argv list
+  /* Get Variables from CLArgs */
   argv ++;
   argc --;
 
@@ -49,56 +49,62 @@ int main(int argc, char** argv) {
   /* Init of variables */
   radius = atoi(argv[0]);
 
-  fileIn = malloc(sizeof(char) * strlen(argv[2]));
-  memcpy(fileIn, argv[2], sizeof(char) * strlen(argv[2]));
+  imgIn = ImageRead(argv[1]);
+  width = ImageWidth(imgIn);
+  height = ImageHeight(imgIn);
 
-  fileOut = malloc(sizeof(char) * strlen(argv[3]));
-  memcpy(fileOut, argv[3], sizeof(char) * strlen(argv[3]));
+  /* Create arrays for ScatterV */
+  sendCounts = (int*)malloc(sizeof(int) * num_p);
+  displ = (int*)malloc(sizeof(int) * num_p);
 
+  numRows = (int)(height / num_p);
+  numLeft = (int)(height % num_p);
+
+  for (int i = 0; i < num_p; i++)
+  {
+    if (i == 0)
+    {
+      sendCounts[i] = (numRows + radius)*width*3;
+      displ[i] = 0;
+    } else if (i == num_p-1)
+    {
+      sendCounts[i] = (numRows + numLeft + radius)*width*3;
+      displ[i] = displ[i-1] + numRows*width*3;
+    } else
+    {
+      sendCounts[i] = (numRows + 2*radius)*width*3;
+      displ[i] = displ[i-1] + numRows*width*3;
+    } 
+  }
 
   if (rank == 0)
   {
-    imgIn = ImageRead(fileIn);
-    width = ImageWidth(imgIn);
-    height = ImageHeight(imgIn);
-
-    // Create the sub array to send to each process
-    numRows = (int)(height / num_p);
-    numLeft = (int)(height % num_p);
-
-    for (int i = 0; i < num_p; i++)
-    {
-      if (i == 0)
-      {
-        sendCounts[num_p] = (numRows + radius)*width*3;
-        displ[num_p] = 0;
-      } else if (i == num_p - 1)
-      {
-        sendCounts[num_p] = (numRows + numLeft + radius)*width*3;
-        displ[num_p] = (numRows + displ[num_p - 1])*width*3;
-      } else
-      {
-        sendCounts[num_p] = (numRows + 2*radius)*width*3;
-        displ[num_p] = (numRows + displ[num_p - 1])*width*3;
-      }
+    
+    printf("width: %d, height: %d, numRows: %d, numLeft: %d, radius: %d\n", width, height, numRows, numLeft, radius);
+    for (int i = 0; i < width * height * 3; i++) {
+      printf("%d,", imgIn->data[i]);
+      if ((i+1) % 3 == 0)
+        printf("\t");
+      if ((i+1) % 9 == 0)
+        printf("\n");
+      
     }
+
+    printf("\n");
+
   }
+
   unsigned char *subData = (char*)malloc(sizeof(char) * sendCounts[rank]);
 
-  MPI_Scatterv(imgIn->data, sendCounts, displ, MPI_UNSIGNED_CHAR, &subData, 6000, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(imgIn->data, sendCounts, displ, MPI_UNSIGNED_CHAR, subData, sendCounts[rank], MPI_UNSIGNED_CHAR, 0,  MPI_COMM_WORLD);
 
   printf("%d\n", rank);
 
   for(int i = 0; i < sendCounts[rank]; i++)
   {
-    printf("%c\t", subData[i]);
+    printf("%d ", subData[i]);
   }
 
-  printf("\n");
-
-
-
-  // Take out name of program from argv list
 
 /*
   for(int y = 0; y < height; y++)
@@ -141,6 +147,7 @@ int main(int argc, char** argv) {
   // Finalize the MPI environment.
   MPI_Finalize();
 
+  free(subData);
   free(sendCounts);
   free(displ);
 

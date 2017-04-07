@@ -4,7 +4,7 @@ pa4.x : pa4.c ppmFile.c
 	mpicc -o $@ $^ $(CFLAGS)
 
 run: pa4.x
-	mpirun -np 10 ./$^ 5 "fox.ppm" "out.ppm"
+	mpirun -np 10 ./$^ 5 "small.ppm" "out.ppm"
 
 
 clean:
