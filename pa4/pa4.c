@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
     size = (end - begin);
 
     dataToSend = (char*)malloc(sizeof(char) * size);
-    for (int i = 0; i < size; i++) { dataToSend[i]= 0; }
+    for (int i = begin; i < end; i++) { dataToSend[i]= 0; }
 
     gatherCounts[rank] = size;
     gatherDispl[rank] = 0;
@@ -125,10 +125,10 @@ int main(int argc, char** argv) {
     size = (end - begin);
 
     dataToSend = (char*)malloc(sizeof(char) * size);
-    for (int i = 0; i < size; i++) { dataToSend[i]= 255; }
+    for (int i = begin; i < end; i++) { dataToSend[i]= 0; }
 
     gatherCounts[rank] = size;
-    gatherDispl[rank] = scatterCounts[rank]* rank / 3;
+    gatherDispl[rank] = scatterCounts[rank];
   } else 
   {
     begin = radius*3*width;
@@ -136,19 +136,20 @@ int main(int argc, char** argv) {
     size = (end - begin);
 
     dataToSend = (char*)malloc(sizeof(char) * size);
-    for (int i = 0; i < size; i++) { dataToSend[i]= 0; }
+    for (int i = begin; i < end; i++) { dataToSend[i]= 0; }
 
     gatherCounts[rank] = size;
-    gatherDispl[rank] = scatterCounts[rank]* rank / 3;
-  }
+    gatherDispl[rank] = (scatterCounts[rank]* rank) / 3;
+ }
 
-  MPI_Gatherv(dataToSend, size, MPI_UNSIGNED_CHAR, imgOut->data, gatherCounts, gatherDispl, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD); 
+  // SEG FAULT
+  MPI_Gatherv(dataToSend, size, MPI_UNSIGNED_CHAR, imgOut->data, gatherCounts, gatherDispl, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
 
   if (rank == 0) {
-   ImageWrite(imgOut, argv[2]); 
-    
-  }
+    //ImageWrite(imgOut, argv[2]); 
+ } 
 
+  // Finalize the MPI environment.
   MPI_Finalize();
 
   free(scatterCounts);
@@ -192,9 +193,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  ImageWrite(imgOut, fileOut);
 */
-  // Finalize the MPI environment.
 
 
   return 0;
