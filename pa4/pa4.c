@@ -30,11 +30,8 @@ int main(int argc, char** argv) {
 
   int radius, width, height;
   int numRows, numLeft;
-  int* sendCounts;
-  int* displ;
-  char* fileIn;
-  char* fileOut;
-  Image* imgIn, imgOut;
+  int *scatterCounts, *scatterDispl;
+  Image *imgIn, *imgOut;
 
 
   // Remove the filename from the argv list
@@ -57,9 +54,10 @@ int main(int argc, char** argv) {
   imgIn = ImageRead(argv[1]);
   width = ImageWidth(imgIn);
   height = ImageHeight(imgIn);
+  imgOut = ImageCreate(width, height);
 
-  sendCounts = (int*)malloc(sizeof(int) * num_p);
-  displ = (int*)malloc(sizeof(int) * num_p);
+  scatterCounts = (int*)malloc(sizeof(int) * num_p);
+  scatterDispl = (int*)malloc(sizeof(int) * num_p);
 
   // Create the sub array to send to each process
   numRows = (int)(height / num_p);
@@ -69,16 +67,16 @@ int main(int argc, char** argv) {
   {
     if (i == 0)
     {
-      sendCounts[i] = (numRows + radius)*width*3;
-      displ[i] = 0;
+      scatterCounts[i] = (numRows + radius)*width*3;
+      scatterDispl[i] = 0;
     } else if (i == num_p-1)
     {
-      sendCounts[i] = (numRows + numLeft + radius)*width*3;
-      displ[i] = (sendCounts[i-1] - (3*width)) + displ[i-1] - (radius*3*width);
+      scatterCounts[i] = (numRows + numLeft + radius)*width*3;
+      scatterDispl[i] = (scatterCounts[i-1] - (3*width)) + scatterDispl[i-1] - (radius*3*width);
     } else
     {
-      sendCounts[i] = (numRows + 2*radius)*width*3;
-      displ[i] = (sendCounts[i-1] - (3*width)) + displ[i-1] - (radius*3*width);
+      scatterCounts[i] = (numRows + 2*radius)*width*3;
+      scatterDispl[i] = (scatterCounts[i-1] - (3*width)) + scatterDispl[i-1] - (radius*3*width);
     } 
   }
 
@@ -99,23 +97,64 @@ int main(int argc, char** argv) {
 
   }
 
-  unsigned char *subData = (char*)malloc(sizeof(char) * sendCounts[rank]);
+  unsigned char *subData = (char*)malloc(sizeof(char) * scatterCounts[rank]);
 
-  MPI_Scatterv(imgIn->data, sendCounts, displ, MPI_UNSIGNED_CHAR, subData, sendCounts[rank], MPI_UNSIGNED_CHAR, 0,  MPI_COMM_WORLD);
+  MPI_Scatterv(imgIn->data, scatterCounts, scatterDispl, MPI_UNSIGNED_CHAR, subData, scatterCounts[rank], MPI_UNSIGNED_CHAR, 0,  MPI_COMM_WORLD);
 
-  printf("%d\n", rank);
-  printf("send[%d] = %d\n", rank, sendCounts[rank]);
-  printf("displ[%d] = %d\n", rank, displ[rank]);
-  printf("\n");
 
-  for(int i = 0; i < sendCounts[rank]; i++)
+  unsigned char *dataToSend = NULL;
+  int *gatherCounts = (int*)malloc(sizeof(int) * num_p);
+  int *gatherDispl = (int*)malloc(sizeof(int) * num_p);
+  int begin, end, size;
+
+  if (rank == 0) 
   {
-    printf("%d ", subData[i]);
+    begin = 0;
+    end = scatterCounts[rank] - radius*3*width;
+    size = (end - begin);
+
+    dataToSend = (char*)malloc(sizeof(char) * size);
+    for (int i = 0; i < size; i++) { dataToSend[i]= 0; }
+
+    gatherCounts[rank] = size;
+    gatherDispl[rank] = 0;
+  } else if (rank == num_p-1) 
+  {
+    begin = radius*3*width;
+    end = scatterCounts[rank];
+    size = (end - begin);
+
+    dataToSend = (char*)malloc(sizeof(char) * size);
+    for (int i = 0; i < size; i++) { dataToSend[i]= 255; }
+
+    gatherCounts[rank] = size;
+    gatherDispl[rank] = scatterCounts[rank]* rank / 3;
+  } else 
+  {
+    begin = radius*3*width;
+    end = scatterCounts[rank] - radius*3*width;
+    size = (end - begin);
+
+    dataToSend = (char*)malloc(sizeof(char) * size);
+    for (int i = 0; i < size; i++) { dataToSend[i]= 0; }
+
+    gatherCounts[rank] = size;
+    gatherDispl[rank] = scatterCounts[rank]* rank / 3;
   }
 
-  printf("\n");
-  printf("\n");
+  MPI_Gatherv(dataToSend, size, MPI_UNSIGNED_CHAR, imgOut->data, gatherCounts, gatherDispl, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD); 
 
+  if (rank == 0) {
+   ImageWrite(imgOut, argv[2]); 
+    
+  }
+
+  MPI_Finalize();
+
+  free(scatterCounts);
+  free(scatterDispl);
+  free(gatherCounts);
+  free(gatherDispl);
 
 /*
   for(int y = 0; y < height; y++)
@@ -156,10 +195,7 @@ int main(int argc, char** argv) {
   ImageWrite(imgOut, fileOut);
 */
   // Finalize the MPI environment.
-  MPI_Finalize();
 
-//  free(sendCounts);
-//  free(displ);
 
   return 0;
 }
