@@ -69,56 +69,57 @@ int main(int argc, char** argv) {
     end = start + nppp + remaining;
     start_x = start % width;
     end_x = end % width;
-    start_y = (int) (start / width);
-    end_y = (int) (end / width);
+    start_y = (int)(start / width);
+    end_y = (int)(end / width);
+    printf("(%d %d %d %d)\n", start_x, end_x, start_y, end_y);
   } else
   {
     start = rank * nppp;
     end = start + nppp;
     start_x = start % width;
     end_x = end % width;
-    start_y = (int) (start / width);
-    end_y = (int) (end / width);
+    start_y = (int)(start / width);
+    end_y = (int)(end / width);
+    printf("(%d %d %d %d)\n", start_x, end_x, start_y, end_y);
   }
 
   int *outPixels;
   outPixels = (int *)malloc(sizeof(int) * ((end - start)*5));
 
   int counter = 0;
-  for (int y = start_y; y < end_y; y++)
+  for (int pixel = start; pixel < end; pixel ++)
   {
-    for (int x = start_x; x < end_x; x++)
-    {
-      int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
+    int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
+    int x = (int)(pixel % width);
+    int y = (int)(pixel / width);
 
-      for(int bY = y-radius; bY <= y+radius; bY++)
+    for(int bY = y-radius; bY <= y+radius; bY++)
+    {
+      for(int bX = x-radius; bX <= x + radius;  bX++)
       {
-        for(int bX = x-radius; bX <= x + radius;  bX++)
+        if(bY < 0 || bX < 0 || bX > width || bY > height)
         {
-          if(bY < 0 || bX < 0 || bX > width || bY > height)
-          {
-            continue;
-          }
-          else
-          {
-            totalR += ImageGetPixel(imgIn, bX, bY, RED);
-            totalG += ImageGetPixel(imgIn, bX, bY, GREEN);
-            totalB += ImageGetPixel(imgIn, bX, bY, BLUE);
-            numPixels ++;
-          }
+          continue;
+        }
+        else
+        {
+          totalR += ImageGetPixel(imgIn, bX, bY, RED);
+          totalG += ImageGetPixel(imgIn, bX, bY, GREEN);
+          totalB += ImageGetPixel(imgIn, bX, bY, BLUE);
+          numPixels ++;
         }
       }
-
-      int newR = (int)(totalR / numPixels);
-      int newG = (int)(totalG / numPixels);
-      int newB = (int)(totalB / numPixels);
-      outPixels[counter++] = x;
-      outPixels[counter++] = y;
-      outPixels[counter++] = newR;
-      outPixels[counter++] = newG;
-      outPixels[counter++] = newB;
-
     }
+
+    int newR = (int)(totalR / numPixels);
+    int newG = (int)(totalG / numPixels);
+    int newB = (int)(totalB / numPixels);
+    outPixels[counter++] = x;
+    outPixels[counter++] = y;
+    outPixels[counter++] = newR;
+    outPixels[counter++] = newG;
+    outPixels[counter++] = newB;
+
   }
 
   //for(int i = 1; i <= (end-start)*5; i+=5){
