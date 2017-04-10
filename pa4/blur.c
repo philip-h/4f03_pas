@@ -159,5 +159,7 @@ int main(int argc, char** argv) {
     }
   }
 
+  ImageWrite(imgOut, argv[2]);
+
   return 0;
 }
