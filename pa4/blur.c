@@ -82,8 +82,9 @@ int main(int argc, char** argv) {
   }
 
   int *outPixels;
-  outPixels = (int *)malloc(sizeof(int) * ((end - start)*3));
+  outPixels = (int *)malloc(sizeof(int) * ((end - start)*5));
 
+  int counter = 0;
   for (int y = start_y; y < end_y; y++)
   {
     for (int x = start_x; x < start_x; x++) 
@@ -111,6 +112,11 @@ int main(int argc, char** argv) {
       int newR = (int)(totalR / numPixels);
       int newG = (int)(totalG / numPixels);
       int newB = (int)(totalB / numPixels);
+      outPixels[counter++] = x;
+      outPixels[counter++] = y;
+      outPixels[counter++] = newR;
+      outPixels[counter++] = newG;
+      outPixels[counter++] = newB;
 
     }
   } 
