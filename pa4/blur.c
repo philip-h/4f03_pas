@@ -62,25 +62,15 @@ int main(int argc, char** argv) {
 
   // Determine the range of pixels that each thread will read
 
-  int start, end, start_x, end_x, start_y, end_y;
+  int start, end;
   if (rank == num_p - 1)
   {
     start = rank * nppp;
     end = start + nppp + remaining;
-    start_x = start % width;
-    end_x = end % width;
-    start_y = (int)(start / width);
-    end_y = (int)(end / width);
-    printf("(%d %d %d %d)\n", start_x, end_x, start_y, end_y);
   } else
   {
     start = rank * nppp;
     end = start + nppp;
-    start_x = start % width;
-    end_x = end % width;
-    start_y = (int)(start / width);
-    end_y = (int)(end / width);
-    printf("(%d %d %d %d)\n", start_x, end_x, start_y, end_y);
   }
 
   int *outPixels;
@@ -122,12 +112,6 @@ int main(int argc, char** argv) {
 
   }
 
-  //for(int i = 1; i <= (end-start)*5; i+=5){
-  //  printf("(%d, %d, %d, %d, %d) ", outPixels[i-1],outPixels[i],outPixels[i+1],outPixels[i+2],outPixels[i+3]);
-  //  if (i % 10 == 0)
-  //    printf("\n"); 
- // }
-
   if(rank != 0)
   {
     MPI_Ssend(outPixels, (end - start)*5, MPI_INT, 0, 0, MPI_COMM_WORLD);
@@ -159,14 +143,15 @@ int main(int argc, char** argv) {
         int g = outPixels[j+3];
         int b = outPixels[j+4];
 
+  
         ImageSetPixel(imgOut, x, y, RED, r);
         ImageSetPixel(imgOut, x, y, GREEN, g);
         ImageSetPixel(imgOut, x, y, BLUE, b);
       }
     }
+    ImageWrite(imgOut, argv[2]);
   }
 
-  ImageWrite(imgOut, argv[2]);
   
   MPI_Finalize();
 
