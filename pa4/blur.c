@@ -55,38 +55,38 @@ int main(int argc, char** argv) {
   width = ImageWidth(imgIn);
   height = ImageHeight(imgIn);
   imgOut = ImageCreate(width, height);
-  
+
   // Number of Pixels Per Process (nppp)
   int nppp = (width * height) / num_p;
   int remaining = (width * height) % num_p;
 
   // Determine the range of pixels that each thread will read
-  
+
   int start, end, start_x, end_x, start_y, end_y;
-  if (rank == num_p - 1) 
+  if (rank == num_p - 1)
   {
     start = rank * nppp;
     end = start + nppp + remaining;
     start_x = start % width;
     end_x = end % width;
     start_y = (int) (start / width);
-    end_y = (int) (end / width); 
+    end_y = (int) (end / width);
   } else
-  { 
+  {
     start = rank * nppp;
     end = start + nppp;
     start_x = start % width;
     end_x = end % width;
     start_y = (int) (start / width);
-    end_y = (int) (end / width); 
+    end_y = (int) (end / width);
   }
 
   int *outPixels;
-  outPixels = (int *)malloc(sizeof(int) * ((end - start)*3));
+  outPixels = (int *)malloc(sizeof(int) * ((end - start)*5));
 
   for (int y = start_y; y < end_y; y++)
   {
-    for (int x = start_x; x < start_x; x++) 
+    for (int x = start_x; x < start_x; x++)
     {
       int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
 
@@ -113,7 +113,45 @@ int main(int argc, char** argv) {
       int newB = (int)(totalB / numPixels);
 
     }
-  } 
+  }
+
+  if(rank != 0)
+  {
+    MPI_Ssend(outPixels, (end - start)*5, MPI_INT, 0, 0, MPI_COMM_WORLD);
+  }
+  else
+  {
+    for(int i = 0; i < (end - start)*5; i+=5)
+    {
+      int x = outPixels[i];
+      int y = outPixels[i+1];
+      int r = outPixels[i+2];
+      int g = outPixels[i+3];
+      int b = outPixelsp[i+4];
+
+      ImageSetPixel(imgOut, x, y, RED, r);
+      ImageSetPixel(imgOut, x, y, GREEN, g);
+      ImageSetPixel(imgOut, x, y, BLUE, b);
+    }
+
+    for(int i = 1; i < num_p; i++)
+    {
+      MPI_Recv(outPixels, (end + remaining - start)*5, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      for(int i = 0; i < (end - start)*5; i+=5)
+      {
+        int x = outPixels[i];
+        int y = outPixels[i+1];
+        int r = outPixels[i+2];
+        int g = outPixels[i+3];
+        int b = outPixelsp[i+4];
+
+        ImageSetPixel(imgOut, x, y, RED, r);
+        ImageSetPixel(imgOut, x, y, GREEN, g);
+        ImageSetPixel(imgOut, x, y, BLUE, b);
+      }
+    }
+  }
 
   return 0;
 }
