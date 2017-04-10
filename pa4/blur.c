@@ -61,27 +61,32 @@ int main(int argc, char** argv) {
   int remaining = (width * height) % num_p;
 
   // Determine the range of pixels that each thread will read
-  int start = rank * nppp;
-  int end = start + nppp;
-  int start_x = start % width;
-  int end_x = end % width;
-  int start_y = (int) (start / width);
-  int end_y = (int) (end / width); 
+  
+  int start, end, start_x, end_x, start_y, end_y;
+  if (rank == num_p - 1) 
+  {
+    start = rank * nppp;
+    end = start + nppp + remaining;
+    start_x = start % width;
+    end_x = end % width;
+    start_y = (int) (start / width);
+    end_y = (int) (end / width); 
+  } else
+  { 
+    start = rank * nppp;
+    end = start + nppp;
+    start_x = start % width;
+    end_x = end % width;
+    start_y = (int) (start / width);
+    end_y = (int) (end / width); 
+  }
 
+  int *outPixels;
+  outPixels = (int *)malloc(sizeof(int) * ((end - start)*3));
 
   for (int y = start_y; y < end_y; y++)
   {
     for (int x = start_x; x < start_x; x++) 
-    {
-      int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
-      
-    }
-  } 
-
-/*
-  for(int y = 0; y < height; y++)
-  {
-    for(int x = 0; x < width; x++)
     {
       int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
 
@@ -107,15 +112,8 @@ int main(int argc, char** argv) {
       int newG = (int)(totalG / numPixels);
       int newB = (int)(totalB / numPixels);
 
-      ImageSetPixel(imgOut, x, y, RED, newR);
-      ImageSetPixel(imgOut, x, y, GREEN, newG);
-      ImageSetPixel(imgOut, x, y, BLUE, newB);
-
     }
-  }
-
-*/
-
+  } 
 
   return 0;
 }
