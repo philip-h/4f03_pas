@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
   int counter = 0;
   for (int y = start_y; y < end_y; y++)
   {
-    for (int x = start_x; x < start_x; x++)
+    for (int x = start_x; x < end_x; x++)
     {
       int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
 
@@ -121,6 +121,12 @@ int main(int argc, char** argv) {
     }
   }
 
+  //for(int i = 1; i <= (end-start)*5; i+=5){
+  //  printf("(%d, %d, %d, %d, %d) ", outPixels[i-1],outPixels[i],outPixels[i+1],outPixels[i+2],outPixels[i+3]);
+  //  if (i % 10 == 0)
+  //    printf("\n"); 
+ // }
+
   if(rank != 0)
   {
     MPI_Ssend(outPixels, (end - start)*5, MPI_INT, 0, 0, MPI_COMM_WORLD);
@@ -133,7 +139,7 @@ int main(int argc, char** argv) {
       int y = outPixels[i+1];
       int r = outPixels[i+2];
       int g = outPixels[i+3];
-      int b = outPixelsp[i+4];
+      int b = outPixels[i+4];
 
       ImageSetPixel(imgOut, x, y, RED, r);
       ImageSetPixel(imgOut, x, y, GREEN, g);
@@ -144,13 +150,13 @@ int main(int argc, char** argv) {
     {
       MPI_Recv(outPixels, (end + remaining - start)*5, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-      for(int i = 0; i < (end - start)*5; i+=5)
+      for(int j = 0; j < (end - start)*5; j+=5)
       {
-        int x = outPixels[i];
-        int y = outPixels[i+1];
-        int r = outPixels[i+2];
-        int g = outPixels[i+3];
-        int b = outPixelsp[i+4];
+        int x = outPixels[j];
+        int y = outPixels[j+1];
+        int r = outPixels[j+2];
+        int g = outPixels[j+3];
+        int b = outPixels[j+4];
 
         ImageSetPixel(imgOut, x, y, RED, r);
         ImageSetPixel(imgOut, x, y, GREEN, g);
@@ -160,6 +166,8 @@ int main(int argc, char** argv) {
   }
 
   ImageWrite(imgOut, argv[2]);
+  
+  MPI_Finalize();
 
   return 0;
 }
