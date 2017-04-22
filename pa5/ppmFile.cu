@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include "ppmFile.h"
+#include "ppmFile.cuh"
 
 /************************ private functions ****************************/
 
