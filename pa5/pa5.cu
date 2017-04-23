@@ -5,11 +5,6 @@
 #include "ppmFile.cuh"
 
 /* Globals */
-// const int MAX_STRING = 100;
-// const int RED = 0;
-// const int GREEN = 1;
-// const int BLUE = 2;
-
 const char usage [] = "./pa5.x r <inputFilename>.ppm <outputFilename>.ppm\n"
       "where:\n"
       "r is the bulrr radians in pixels\n"
@@ -97,7 +92,7 @@ int main(int argc, char** argv) {
   cudaMemcpy(dev_width,  &width, sizeof(int),  cudaMemcpyHostToDevice );
   cudaMemcpy(dev_height,  &height, sizeof(int),  cudaMemcpyHostToDevice );
 
-  blurPPM<<< (size/440) , 440 >>>(dev_dataIn, dev_dataOut, dev_radius, dev_width, dev_height);
+  blurPPM<<< (width*height)/1024  , 1024 >>>(dev_dataIn, dev_dataOut, dev_radius, dev_width, dev_height);
 
   cudaMemcpy(imgOut->data, dev_dataOut, size, cudaMemcpyDeviceToHost );
   
