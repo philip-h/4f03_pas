@@ -85,7 +85,7 @@ __global__ void blurPPM(unsigned char *dataIn, unsigned char *dataOut, int *radi
   */
 
   int offset = (y*(*width) + x)*3;
-  dataOut[offest + 0] = newR;
+  dataOut[offset + 0] = newR;
   dataOut[offset + 1] = newG;
   dataOut[offset + 2] = newB;
 
@@ -147,8 +147,24 @@ int main(int argc, char** argv) {
   cudaMemcpy(dev_width,  &width, sizeof(int),  cudaMemcpyHostToDevice );
   cudaMemcpy(dev_height,  &height, sizeof(int),  cudaMemcpyHostToDevice );
 
+  // Compute grid and block size
+  // NOTE: 1024 is the max thread size per block, so we want to use as many threads as possible
+  int imageSize = width*height;
+  int blockSize, gridSize;
+  if (imageSize % 1024 == 0) {
+    blockSize = imageSize / 1024;
+    gridSize = 1024;
+  } else {
+    for(int i = 1023; i >= 0; i--) {
+      if (imageSize % i == 0) {
+         blockSize = imageSize / i;
+         gridSize = i;
+         break;
+      }
+    }
+  }
   cudaEventRecord(start);
-  blurPPM<<< (width*height)/1024  , 1024 >>>(dev_dataIn, dev_dataOut, dev_radius, dev_width, dev_height);
+  blurPPM<<< blockSize, gridSize >>>(dev_dataIn, dev_dataOut, dev_radius, dev_width, dev_height);
   cudaEventRecord(stop);
 
   // Copy output from blurPPM to local data array from Image struct
