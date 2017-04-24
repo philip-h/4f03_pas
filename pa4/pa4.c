@@ -29,8 +29,6 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int radius, width, height;
-  int numRows, numLeft;
-  int *scatterCounts, *scatterDispl;
   Image *imgIn, *imgOut;
 
 
@@ -51,150 +49,120 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  double local_start, local_finish, local_elapsed, elapsed;
+  MPI_Barrier(MPI_COMM_WORLD);
+  local_start = MPI_Wtime();
+
   imgIn = ImageRead(argv[1]);
   width = ImageWidth(imgIn);
   height = ImageHeight(imgIn);
   imgOut = ImageCreate(width, height);
 
-  scatterCounts = (int*)malloc(sizeof(int) * num_p);
-  scatterDispl = (int*)malloc(sizeof(int) * num_p);
+  // Number of Pixels Per Process (nppp)
+  int nppp = (width * height) / num_p;
+  int remaining = (width * height) % num_p;
 
-  // Create the sub array to send to each process
-  numRows = (int)(height / num_p);
-  numLeft = (int)(height % num_p);
+  // Determine the range of pixels that each thread will read
 
-  for (int i = 0; i < num_p; i++)
+  int start, end;
+  if (rank == num_p - 1)
   {
-    if (i == 0)
-    {
-      scatterCounts[i] = (numRows + radius)*width*3;
-      scatterDispl[i] = 0;
-    } else if (i == num_p-1)
-    {
-      scatterCounts[i] = (numRows + numLeft + radius)*width*3;
-      scatterDispl[i] = (scatterCounts[i-1] - (3*width)) + scatterDispl[i-1] - (radius*3*width);
-    } else
-    {
-      scatterCounts[i] = (numRows + 2*radius)*width*3;
-      scatterDispl[i] = (scatterCounts[i-1] - (3*width)) + scatterDispl[i-1] - (radius*3*width);
-    } 
+    start = rank * nppp;
+    end = start + nppp + remaining;
+  } else
+  {
+    start = rank * nppp;
+    end = start + nppp;
   }
 
-  if (rank == 0)
+  int *outPixels;
+  outPixels = (int *)malloc(sizeof(int) * ((end - start)*5));
+
+  int counter = 0;
+  for (int pixel = start; pixel < end; pixel ++)
   {
-    
-    printf("width: %d, height: %d, numRows: %d, numLeft: %d, radius: %d\n", width, height, numRows, numLeft, radius);
-    for (int i = 0; i < width * height * 3; i++) {
-      printf("%d,", imgIn->data[i]);
-      if ((i+1) % 3 == 0)
-        printf("\t");
-      if ((i+1) % 9 == 0)
-        printf("\n");
-      
-    }
+    int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
+    int x = (int)(pixel % width);
+    int y = (int)(pixel / width);
 
-    printf("\n");
-
-  }
-
-  unsigned char *subData = (char*)malloc(sizeof(char) * scatterCounts[rank]);
-
-  MPI_Scatterv(imgIn->data, scatterCounts, scatterDispl, MPI_UNSIGNED_CHAR, subData, scatterCounts[rank], MPI_UNSIGNED_CHAR, 0,  MPI_COMM_WORLD);
-
-
-  unsigned char *dataToSend = NULL;
-  int *gatherCounts = (int*)malloc(sizeof(int) * num_p);
-  int *gatherDispl = (int*)malloc(sizeof(int) * num_p);
-  int begin, end, size;
-
-  if (rank == 0) 
-  {
-    begin = 0;
-    end = scatterCounts[rank] - radius*3*width;
-    size = (end - begin);
-
-    dataToSend = (char*)malloc(sizeof(char) * size);
-    for (int i = begin; i < end; i++) { dataToSend[i]= 0; }
-
-    gatherCounts[rank] = size;
-    gatherDispl[rank] = 0;
-  } else if (rank == num_p-1) 
-  {
-    begin = radius*3*width;
-    end = scatterCounts[rank];
-    size = (end - begin);
-
-    dataToSend = (char*)malloc(sizeof(char) * size);
-    for (int i = begin; i < end; i++) { dataToSend[i]= 0; }
-
-    gatherCounts[rank] = size;
-    gatherDispl[rank] = scatterCounts[rank];
-  } else 
-  {
-    begin = radius*3*width;
-    end = scatterCounts[rank] - radius*3*width;
-    size = (end - begin);
-
-    dataToSend = (char*)malloc(sizeof(char) * size);
-    for (int i = begin; i < end; i++) { dataToSend[i]= 0; }
-
-    gatherCounts[rank] = size;
-    gatherDispl[rank] = (scatterCounts[rank]* rank) / 3;
- }
-
-  // SEG FAULT
-  MPI_Gatherv(dataToSend, size, MPI_UNSIGNED_CHAR, imgOut->data, gatherCounts, gatherDispl, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-
-  if (rank == 0) {
-    //ImageWrite(imgOut, argv[2]); 
- } 
-
-  // Finalize the MPI environment.
-  MPI_Finalize();
-
-  free(scatterCounts);
-  free(scatterDispl);
-  free(gatherCounts);
-  free(gatherDispl);
-
-/*
-  for(int y = 0; y < height; y++)
-  {
-    for(int x = 0; x < width; x++)
+    for(int bY = y-radius; bY <= y+radius; bY++)
     {
-      int totalR = 0, totalG = 0, totalB = 0, numPixels = 0;
-
-      for(int bY = y-radius; bY <= y+radius; bY++)
+      for(int bX = x-radius; bX <= x + radius;  bX++)
       {
-        for(int bX = x-radius; bX <= x + radius;  bX++)
+        if(bY < 0 || bX < 0 || bX > width || bY > height)
         {
-          if(bY < 0 || bX < 0 || bX > width || bY > height)
-          {
-            continue;
-          }
-          else
-          {
-            totalR += ImageGetPixel(imgIn, bX, bY, RED);
-            totalG += ImageGetPixel(imgIn, bX, bY, GREEN);
-            totalB += ImageGetPixel(imgIn, bX, bY, BLUE);
-            numPixels ++;
-          }
+          continue;
+        }
+        else
+        {
+          totalR += ImageGetPixel(imgIn, bX, bY, RED);
+          totalG += ImageGetPixel(imgIn, bX, bY, GREEN);
+          totalB += ImageGetPixel(imgIn, bX, bY, BLUE);
+          numPixels ++;
         }
       }
-
-      int newR = (int)(totalR / numPixels);
-      int newG = (int)(totalG / numPixels);
-      int newB = (int)(totalB / numPixels);
-
-      ImageSetPixel(imgOut, x, y, RED, newR);
-      ImageSetPixel(imgOut, x, y, GREEN, newG);
-      ImageSetPixel(imgOut, x, y, BLUE, newB);
-
     }
+
+    int newR = (int)(totalR / numPixels);
+    int newG = (int)(totalG / numPixels);
+    int newB = (int)(totalB / numPixels);
+    outPixels[counter++] = x;
+    outPixels[counter++] = y;
+    outPixels[counter++] = newR;
+    outPixels[counter++] = newG;
+    outPixels[counter++] = newB;
+
   }
 
-*/
+  if(rank != 0)
+  {
+    MPI_Ssend(outPixels, (end - start)*5, MPI_INT, 0, 0, MPI_COMM_WORLD);
+  }
+  else
+  {
+    for(int i = 0; i < (end - start)*5; i+=5)
+    {
+      int x = outPixels[i];
+      int y = outPixels[i+1];
+      int r = outPixels[i+2];
+      int g = outPixels[i+3];
+      int b = outPixels[i+4];
 
+      ImageSetPixel(imgOut, x, y, RED, r);
+      ImageSetPixel(imgOut, x, y, GREEN, g);
+      ImageSetPixel(imgOut, x, y, BLUE, b);
+    }
+
+    for(int i = 1; i < num_p; i++)
+    {
+      MPI_Recv(outPixels, (end + remaining - start)*5, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      for(int j = 0; j < (end - start)*5; j+=5)
+      {
+        int x = outPixels[j];
+        int y = outPixels[j+1];
+        int r = outPixels[j+2];
+        int g = outPixels[j+3];
+        int b = outPixels[j+4];
+
+  
+        ImageSetPixel(imgOut, x, y, RED, r);
+        ImageSetPixel(imgOut, x, y, GREEN, g);
+        ImageSetPixel(imgOut, x, y, BLUE, b);
+      }
+    }
+    ImageWrite(imgOut, argv[2]);
+  }
+
+  local_finish = MPI_Wtime();
+  local_elapsed = local_finish - local_start;
+  MPI_Reduce(&local_elapsed, &elapsed, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  if (rank == 0) {
+    printf("Elapsed time: %e seconds\n", elapsed);
+  }
+
+  
+  MPI_Finalize();
 
   return 0;
 }
